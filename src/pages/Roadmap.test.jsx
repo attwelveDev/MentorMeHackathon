@@ -196,6 +196,42 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     expect(screen.getByRole('dialog', { name: 'Apply for internships' })).toBeInTheDocument()
   })
 
+  it('opens the checkpoint as a dimmed, full-screen overlay rather than inline in the page flow', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    const dialog = screen.getByRole('dialog', { name: 'Apply for internships' })
+    const overlay = dialog.closest('.fixed.inset-0')
+    expect(overlay).toBeTruthy()
+    expect(overlay.className).toMatch(/bg-black/)
+  })
+
+  it('clicking the dimmed backdrop closes the panel', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    const overlay = screen.getByRole('dialog', { name: 'Apply for internships' }).closest('.fixed.inset-0')
+    fireEvent.click(overlay)
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('clicking inside the panel itself does not close it', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    fireEvent.click(screen.getByRole('dialog', { name: 'Apply for internships' }))
+    expect(screen.getByRole('dialog', { name: 'Apply for internships' })).toBeInTheDocument()
+  })
+
   it('closing the panel via its close control hides it', async () => {
     mockUseAuth.mockReturnValue({ user: null })
     mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })

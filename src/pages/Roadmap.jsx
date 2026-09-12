@@ -258,17 +258,6 @@ export default function Roadmap() {
             <p className="font-diary-title mt-1 text-3xl">Become a {profile?.targetOccupation}</p>
           </div>
 
-          {openActivity && (
-            <div className="mt-6">
-              <CheckpointPanel
-                activity={openActivity}
-                onClose={() => setOpenKey(null)}
-                onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
-                onRemove={() => handleRemove(openActivity)}
-              />
-            </div>
-          )}
-
           <div className="mt-8 flex flex-wrap items-center gap-4">
             {(!user || !plan) && (
               <button
@@ -314,6 +303,22 @@ export default function Roadmap() {
           </section>
         </div>
       </div>
+
+      {openActivity && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setOpenKey(null)}
+        >
+          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <CheckpointPanel
+              activity={openActivity}
+              onClose={() => setOpenKey(null)}
+              onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
+              onRemove={() => handleRemove(openActivity)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
