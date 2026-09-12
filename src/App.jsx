@@ -6,6 +6,7 @@ import Plan from './pages/Plan'
 import Dashboard from './pages/Dashboard'
 import MarketUpdates from './pages/MarketUpdates'
 import SignUp from './pages/SignUp'
+import Login from './pages/Login'
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/updates" element={<MarketUpdates />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </div>
   )
