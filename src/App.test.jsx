@@ -22,4 +22,10 @@ describe('App nav auth switch', () => {
     render(<MemoryRouter><App /></MemoryRouter>)
     expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
   })
+
+  it('no longer renders a Dashboard nav link', () => {
+    mockUseAuth.mockReturnValue({ user: null, signOut: vi.fn() })
+    render(<MemoryRouter><App /></MemoryRouter>)
+    expect(screen.queryByRole('link', { name: /^dashboard$/i })).not.toBeInTheDocument()
+  })
 })

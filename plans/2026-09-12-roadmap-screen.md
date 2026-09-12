@@ -784,6 +784,8 @@ something this assistant does).
 
 ### Task 7: Route Roadmap in, retire `Plan.jsx`/`Dashboard.jsx`
 
+**Status: Done — human review accepted by user, 2026-09-12.**
+
 - **Description:** Point `/plan` at the new `Roadmap`, remove the
   `/dashboard` route and its nav link, delete the retired files.
 - **Files touched:** `src/App.jsx`, delete `src/pages/Plan.jsx`, delete
@@ -810,20 +812,33 @@ something this assistant does).
 
 ## 6. Feature-level Definition of Done
 
-- [ ] All seven tasks in §5 complete and their tests passing
-- [ ] `npm test` passes for the full suite
-- [ ] `npm run lint` passes
-- [ ] Manually verified (`vercel dev`): guest golden path (Profile → Analysis
-      → Roadmap generates, Year-N grouping, correct pin, Save shows the
-      accurate on-device notice, Accept/edit/status all visibly locked);
-      registered golden path (sign up, plan generation + Save persists to
-      Supabase, Accept/edit/status all functional and reflected on reload);
-      recently-completed student sees the collapsed "Before graduating"
-      green card and real-calendar-year periods after it.
-- [ ] Every requirement in §2 is covered — see §7
-- [ ] Every gated task (5, 6, 7) has been shown to the user and explicitly
+- [x] All seven tasks in §5 complete and their tests passing
+- [x] `npm test` passes for the full suite (107 tests, all green)
+- [ ] `npm run lint` passes — **cannot run**: this repo has no
+      `eslint.config.js` (ESLint 9 requires one), a pre-existing gap
+      unrelated to this feature. Confirmed the same failure exists on the
+      last commit before this plan's work started. Out of scope to fix here
+      per this plan's own task list.
+- [x] Manually verified (`vercel dev`), guest golden path only: Profile →
+      Analysis → Roadmap generates via a real Gemini call, correct Year-N
+      grouping, correct single pin, Save round-tripped a real localStorage
+      write with the accurate on-device notice, Accept/status/Remove all
+      visibly locked with "Create an account to unlock." **Not manually
+      verified live:** the registered golden path (sign-up → generation →
+      Save persists to Supabase → Accept/edit/status functional and
+      reflected on reload) and the recently-completed "Before graduating"
+      collapsed-card path — creating a real account is outside what this
+      assistant does unprompted, so these are covered only by the unit/
+      component test suite (roadmap.test.js's graduate-profile cases;
+      Roadmap.test.jsx's 10 signed-in-path tests), not a live click-through.
+      Recommend the user (or a follow-up session with real credentials)
+      spot-check these two paths against a real Supabase project before
+      shipping.
+- [x] Every requirement in §2 is covered — see §7 (2.1.8 fixed by the Task 6
+      amendment above)
+- [x] Every gated task (5, 6, 7) has been shown to the user and explicitly
       accepted
-- [ ] No item remains in §8
+- [x] No item remains in §8
 
 ## 7. Requirements coverage check
 

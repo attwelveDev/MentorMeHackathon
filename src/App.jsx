@@ -2,8 +2,7 @@ import { Routes, Route, Link } from 'react-router-dom'
 import Welcome from './pages/Welcome'
 import Profile from './pages/Profile'
 import Analysis from './pages/Analysis'
-import Plan from './pages/Plan'
-import Dashboard from './pages/Dashboard'
+import Roadmap from './pages/Roadmap'
 import MarketUpdates from './pages/MarketUpdates'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
@@ -30,7 +29,6 @@ export default function App() {
             <Link to="/" className="font-bold text-slate-900">CareerCompass AU</Link>
             <Link to="/profile" className="text-slate-500 hover:text-slate-900">Profile</Link>
             <Link to="/plan" className="text-slate-500 hover:text-slate-900">Plan</Link>
-            <Link to="/dashboard" className="text-slate-500 hover:text-slate-900">Dashboard</Link>
             <Link to="/updates" className="text-slate-500 hover:text-slate-900">Updates</Link>
             <AuthNav />
           </div>
@@ -39,8 +37,7 @@ export default function App() {
           <Route path="/" element={<Welcome />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/analysis" element={<Analysis />} />
-          <Route path="/plan" element={<Plan />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/plan" element={<Roadmap />} />
           <Route path="/updates" element={<MarketUpdates />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
