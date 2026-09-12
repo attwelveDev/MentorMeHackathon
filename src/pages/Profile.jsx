@@ -14,6 +14,16 @@ import {
 // Screen 2: Student profile
 const BASE_REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'graduationYear', 'targetOccupation', 'skills', 'experience', 'workRights']
 
+function getRequiredFields(studyStage) {
+  return studyStage === 'recently-completed'
+    ? BASE_REQUIRED_FIELDS
+    : [...BASE_REQUIRED_FIELDS, 'courseLengthYears']
+}
+
+function isValidCourseLength(value) {
+  return /^[1-6]$/.test(value.trim())
+}
+
 export default function Profile() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -22,6 +32,7 @@ export default function Profile() {
     educationSector: '',
     studyStage: '',
     graduationYear: '',
+    courseLengthYears: '',
     targetOccupation: '',
     skills: '',
     certifications: '',
@@ -42,9 +53,12 @@ export default function Profile() {
 
   function handleSubmit(event) {
     event.preventDefault()
-    const missing = BASE_REQUIRED_FIELDS.filter((field) => !form[field]?.trim())
-    if (missing.length > 0) {
-      const errors = Object.fromEntries(missing.map((f) => [f, 'This field is required.']))
+    const missing = getRequiredFields(form.studyStage).filter((field) => !form[field]?.trim())
+    const errors = Object.fromEntries(missing.map((f) => [f, 'This field is required.']))
+    if (form.studyStage !== 'recently-completed' && form.courseLengthYears.trim() && !isValidCourseLength(form.courseLengthYears)) {
+      errors.courseLengthYears = 'Enter a whole number between 1 and 6.'
+    }
+    if (Object.keys(errors).length > 0) {
       setFieldErrors(errors)
       setFormError('We could not create your plan. Please check the required information and try again.')
       return
@@ -124,6 +138,16 @@ export default function Profile() {
           onChange={(v) => updateField('graduationYear', v)}
           error={fieldErrors.graduationYear}
         />
+        {form.studyStage !== 'recently-completed' && (
+          <Field
+            id="courseLengthYears"
+            label="Course/program length in years *"
+            value={form.courseLengthYears}
+            onChange={(v) => updateField('courseLengthYears', v)}
+            error={fieldErrors.courseLengthYears}
+            placeholder="e.g. 3"
+          />
+        )}
         <Field
           id="targetOccupation"
           label="Target occupation or role *"

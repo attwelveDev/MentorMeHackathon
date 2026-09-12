@@ -42,6 +42,7 @@ describe('Profile validation', () => {
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Internship, 3 months' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({
@@ -105,6 +106,7 @@ describe('Profile work-preference fields', () => {
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Aged care volunteering' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
   })
@@ -120,6 +122,7 @@ function fillRequiredExcept(omit) {
     experience: 'Work placement, 2 weeks',
     workRights: 'no-restriction',
     graduationYear: '2028',
+    courseLengthYears: '3',
   }
   render(<Profile />)
   const labelFor = {
@@ -131,6 +134,7 @@ function fillRequiredExcept(omit) {
     experience: /employment or volunteer experience/i,
     workRights: /work rights/i,
     graduationYear: /expected graduation year/i,
+    courseLengthYears: /course\/program length in years/i,
   }
   Object.entries(values).forEach(([key, val]) => {
     if (key === omit) return
@@ -162,6 +166,7 @@ describe('Profile final required-field set', () => {
         experience: 'Work placement, 2 weeks',
         specialisation: '',
         graduationYear: '2028',
+        courseLengthYears: '3',
         state: '',
         certifications: '',
         employmentArrangement: '',
@@ -175,6 +180,64 @@ describe('Profile final required-field set', () => {
   it('blocks submission when Expected graduation year is empty', () => {
     fillRequiredExcept('graduationYear')
     expect(mockNavigate).not.toHaveBeenCalled()
+  })
+})
+
+function fillOtherRequiredFields({ studyStage = STUDY_STAGES[0].value } = {}) {
+  fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
+  fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+  fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: studyStage } })
+  fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
+  fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic hand and power tool use' } })
+  fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Work placement, 2 weeks' } })
+  fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
+  fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
+}
+
+describe('Profile course length field', () => {
+  it('renders Course/program length in years as a required text field', () => {
+    render(<Profile />)
+    fillOtherRequiredFields()
+    const field = screen.getByLabelText(/course\/program length in years/i)
+    expect(field.tagName).toBe('INPUT')
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(screen.getAllByText(/this field is required/i).length).toBeGreaterThan(0)
+  })
+
+  it('blocks submission when Course/program length in years is empty and study stage is not Recently completed', () => {
+    fillRequiredExcept('courseLengthYears')
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it.each(['0', '7', 'abc'])('blocks submission when Course/program length in years is %s', (value) => {
+    render(<Profile />)
+    fillOtherRequiredFields()
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(screen.getByText(/enter a whole number between 1 and 6/i)).toBeInTheDocument()
+  })
+
+  it.each(['1', '6'])('allows submission when Course/program length in years is the boundary value %s', (value) => {
+    render(<Profile />)
+    fillOtherRequiredFields()
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).toHaveBeenCalled()
+  })
+
+  it('hides the Course/program length in years field when study stage is Recently completed', () => {
+    render(<Profile />)
+    fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: 'recently-completed' } })
+    expect(screen.queryByLabelText(/course\/program length in years/i)).not.toBeInTheDocument()
+  })
+
+  it('does not require Course/program length in years when study stage is Recently completed', () => {
+    render(<Profile />)
+    fillOtherRequiredFields({ studyStage: 'recently-completed' })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).toHaveBeenCalled()
   })
 })
 
@@ -205,6 +268,7 @@ describe('Profile qualification "none yet" checkbox', () => {
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'None yet' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ qualification: 'No formal qualification yet' }) },
@@ -272,6 +336,7 @@ describe('Profile work rights field', () => {
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Work placement' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'prefer-not-to-say' } })
     fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ workRights: 'prefer-not-to-say' }) },
