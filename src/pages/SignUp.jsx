@@ -44,12 +44,16 @@ export default function SignUp() {
   return (
     <div className="diary-paper min-h-screen py-10">
       <div className="mx-auto flex max-w-5xl gap-0 px-4">
-        <div className="relative hidden shrink-0 sm:flex">
-          <div className="book-spine relative w-3 rounded-l-lg">
-            <span className="book-spine__rivet absolute left-1/2 top-6 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
-            <span className="book-spine__rivet absolute bottom-6 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
+        <div className="relative flex min-w-0 flex-1">
+          {/* Cover: sits behind the tabs and both pages, and peeks out past their edges. */}
+          <div className="book-cover absolute -top-4 -bottom-4 left-3.5 -right-4 hidden rounded-2xl sm:block" />
+          {/* Spine: the binding edge, protruding further than the cover above and below. */}
+          <div className="book-spine absolute -top-8 -bottom-8 left-0 hidden w-3.5 rounded-full sm:block">
+            <span className="book-spine__rivet absolute left-1/2 top-3 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
+            <span className="book-spine__rivet absolute bottom-3 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
           </div>
-          <nav aria-label="Book tabs" className="w-32 pt-10">
+
+          <nav aria-label="Book tabs" className="relative hidden w-32 shrink-0 pt-10 pl-7 sm:block">
             <div className="diary-note mb-4 rounded-r-xl px-3 py-3">
               <p className="font-diary-title flex items-baseline gap-1 text-2xl text-slate-800 dark:text-slate-100">
                 Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
@@ -80,9 +84,8 @@ export default function SignUp() {
               ),
             )}
           </nav>
-        </div>
 
-        <div className="flex min-w-0 flex-1 flex-col sm:flex-row">
+          <div className="relative flex min-w-0 flex-1 flex-col sm:flex-row">
           <div className="diary-note w-full shrink-0 rounded-t-2xl p-6 sm:w-2/5 sm:rounded-l-none sm:rounded-tr-none sm:p-8">
             <div className="relative">
               <h1 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">One more step!</h1>
@@ -196,6 +199,7 @@ export default function SignUp() {
               </Link>
               .
             </p>
+          </div>
           </div>
         </div>
 

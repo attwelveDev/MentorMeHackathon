@@ -64,10 +64,16 @@
   }
 }
 
-/* Book cover spine that the tab strip appears bound to, per the notebook mockup. */
+/* The notebook's cover: sits behind the tab strip and both pages, per the mockup. */
+.book-cover {
+  background: linear-gradient(135deg, #414f74, #2c3652);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* The binding edge of the cover, protruding above/below it. */
 .book-spine {
   background: linear-gradient(180deg, #4a5a80, #35415e);
-  box-shadow: inset -2px 0 3px rgba(255, 255, 255, 0.15), inset 2px 0 4px rgba(0, 0, 0, 0.25);
+  box-shadow: inset -2px 0 3px rgba(255, 255, 255, 0.15), inset 2px 0 4px rgba(0, 0, 0, 0.25), 2px 0 6px rgba(0, 0, 0, 0.25);
 }
 
 .book-spine__rivet {
