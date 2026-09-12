@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { getPlanWithActivities } from '../lib/db'
+import { getPlanWithActivities, updateActivityStatus } from '../lib/db'
 import { computeRoadmap, bucketActivities, computeStats, SECTION_NAMES } from '../lib/roadmap'
 import { getNearestActivityNotification, getStreakNotification } from '../lib/notifications'
 import NotebookFrame, { StickyNote } from '../components/NotebookFrame'
+
+const PROGRESS_BY_STATUS = { 'Not started': 0, 'In progress': 50, 'Completed': 100 }
+
+function formatDueDate(dueDate) {
+  return new Date(dueDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+}
 
 function mapDbActivity(row) {
   return {
@@ -60,6 +66,12 @@ export default function Diary() {
   const nearestActivity = getNearestActivityNotification(roadmap)
   const streak = getStreakNotification(stats)
 
+  async function handleToggleComplete(activity) {
+    const newStatus = activity.status === 'Completed' ? 'Not started' : 'Completed'
+    await updateActivityStatus(activity.id, newStatus)
+    setActivities((prev) => prev.map((a) => (a.id === activity.id ? { ...a, status: newStatus } : a)))
+  }
+
   const rightPage = (
     <>
       <h1 className="font-diary-title text-4xl text-slate-800">My Plan</h1>
@@ -72,7 +84,32 @@ export default function Diary() {
               <h2 className="font-diary-title text-2xl text-slate-800">{name}</h2>
               <div className="mt-3 space-y-3">
                 {buckets[name].map((activity) => (
-                  <p key={activity.id} className="font-diary-body text-slate-800">{activity.title}</p>
+                  <div key={activity.id} className="diary-note rounded-lg border border-slate-200 p-4">
+                    <div className="flex items-start gap-3">
+                      <input
+                        type="checkbox"
+                        aria-label={activity.title}
+                        checked={activity.status === 'Completed'}
+                        onChange={() => handleToggleComplete(activity)}
+                        className="mt-1"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-diary-title text-lg font-semibold text-slate-900">{activity.title}</p>
+                        <p className="font-diary-body text-xs text-slate-500">
+                          {activity.category} · Priority: {activity.priority}
+                        </p>
+                        <div className="mt-2 h-2 w-full rounded-full bg-slate-200">
+                          <div
+                            className="h-2 rounded-full bg-indigo-600"
+                            style={{ width: `${PROGRESS_BY_STATUS[activity.status]}%` }}
+                          />
+                        </div>
+                        <p className="font-diary-body mt-1 text-xs text-slate-500">
+                          {activity.dueDate ? formatDueDate(activity.dueDate) : name}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </section>
