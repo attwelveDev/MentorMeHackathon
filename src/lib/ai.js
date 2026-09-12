@@ -1,5 +1,6 @@
 // Client-side helper for calling the /api/generate serverless function
 // (see api/generate.js). Keeps the Gemini API key server-side only.
+import { getExpectedPeriodLabels } from './roadmap'
 
 async function callGenerate(prompt, task) {
   const response = await fetch('/api/generate', {
@@ -38,19 +39,22 @@ Do not include any text outside the JSON object.`
 
 // Screen 4: generates a stage-by-stage career plan.
 export async function generateCareerPlan(profile) {
+  const periodLabels = getExpectedPeriodLabels(profile)
   const prompt = `You are a career-guidance assistant for international students in Australia.
 Given this student profile (JSON): ${JSON.stringify(profile)}
 
-Generate a stage-by-stage career preparation plan grouped into these periods:
-"Now", "This semester", "Next semester", "Next break", "Before final year", "Graduate application period".
+Generate a stage-by-stage career preparation plan grouped into these exact period labels, in this order, and using ONLY these labels: ${JSON.stringify(periodLabels)}.
+${profile.studyStage === 'recently-completed'
+    ? 'This student has already graduated. Use "Before graduating" for exactly one summary activity representing what they already completed during their studies, with status "Completed". Use the "Year N after graduating" labels for future activities.'
+    : 'This student is still studying. Distribute activities across the Year labels according to when they would realistically be done during a course of this length.'}
 
 Return a JSON array of activities, each with:
 - title: string
 - category: string (one of: Technical skills, Certifications, Work experience, Networking, Extracurricular activities, Application preparation, Commercial and industry awareness, Licensing/registration/compliance, Practical competencies/placements/portfolio evidence)
-- period: string (one of the periods above)
+- period: string (one of the exact period labels above)
 - priority: "High" | "Medium" | "Low"
 - explanation: string (why this activity was recommended)
-- status: "Not started"
+- status: "Not started" (or "Completed", only for the single "Before graduating" activity if used)
 Do not include any text outside the JSON array.`
   const { text } = await callGenerate(prompt, 'career-plan')
   return text
