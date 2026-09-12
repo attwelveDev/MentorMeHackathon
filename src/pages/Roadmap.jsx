@@ -15,13 +15,19 @@ function keyOf(activity) {
 }
 
 const COLOURS = {
-  completed: '#16a34a',
-  missed: '#94a3b8',
-  current: '#ca8a04',
-  upcoming: '#2563eb',
+  completed: { border: '#16a34a', bg: '#eefdf3', text: '#166534' },
+  missed: { border: '#94a3b8', bg: '#f4f2ec', text: '#57534e' },
+  current: { border: '#ca8a04', bg: '#fef9e7', text: '#854d0e' },
+  upcoming: { border: '#2563eb', bg: '#eef4ff', text: '#1e3a8a' },
 }
 
-const GOAL_COLOURS = { background: '#312e81', text: '#eef2ff' }
+const GOAL_COLOURS = { background: '#3b3163', text: '#f5f1e8' }
+
+const TABS = [
+  { to: '/diary', label: 'Diary', bg: '#fef3c7' },
+  { to: '/updates', label: 'News', bg: '#e0e7ff' },
+  { to: '/profile', label: 'Profile', bg: '#dbeafe' },
+]
 
 function mapDbActivity(row) {
   return {
@@ -159,107 +165,136 @@ export default function Roadmap() {
   }
 
   return (
-    <div className="mx-auto flex max-w-5xl gap-6 px-4 py-12">
-      <nav aria-label="Book tabs" className="flex w-32 shrink-0 flex-col gap-3 text-sm">
-        <Link to="/diary" className="text-slate-600 hover:text-slate-900">Diary</Link>
-        <Link to="/updates" className="text-slate-600 hover:text-slate-900">News</Link>
-        <span aria-disabled="true" className="text-slate-400">Jobs (coming soon)</span>
-        <Link to="/profile" className="text-slate-600 hover:text-slate-900">Profile</Link>
-      </nav>
-      <div className="flex-1">
-        <h1 className="text-2xl font-bold text-slate-900">Your career roadmap</h1>
-        <div className="mt-6 space-y-8">
-          {periodOrder.map((period) => (
-            <section key={period}>
-              <h2 className="font-semibold text-slate-800">{period}</h2>
-              <div className="mt-3 space-y-3">
-                {roadmap
-                  .filter((a) => a.period === period)
-                  .map((activity) => (
-                    <div
-                      key={keyOf(activity)}
-                      data-testid={`checkpoint-${activity.title}`}
-                      style={{ borderColor: COLOURS[activity.colour] }}
-                      className="cursor-pointer rounded-md border-2 p-4"
-                      onClick={() => setOpenKey(keyOf(activity))}
-                    >
-                      {activity.isPinned && (
-                        <p className="text-xs font-semibold" style={{ color: COLOURS.current }}>
-                          📍 You are here
-                        </p>
-                      )}
-                      <p className="font-medium text-slate-900">{activity.title}</p>
-                      <p className="text-xs text-slate-500">
-                        {activity.category} · Priority: {activity.priority}
-                      </p>
-                      <p className="mt-2 text-sm text-slate-600">{activity.explanation}</p>
-                    </div>
-                  ))}
-              </div>
-            </section>
-          ))}
-        </div>
-        <div
-          className="mt-8 rounded-md p-6 text-center font-semibold"
-          style={{ backgroundColor: GOAL_COLOURS.background, color: GOAL_COLOURS.text }}
-        >
-          Become a {profile?.targetOccupation}
-        </div>
-
-        {openActivity && (
-          <div className="mt-6">
-            <CheckpointPanel
-              activity={openActivity}
-              onClose={() => setOpenKey(null)}
-              onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
-              onRemove={() => handleRemove(openActivity)}
-            />
-          </div>
-        )}
-
-        <div className="mt-8 flex flex-wrap items-center gap-4">
-          {(!user || !plan) && (
-            <button
-              type="button"
-              onClick={handleSave}
-              className="rounded-md border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+    <div className="diary-paper min-h-screen py-10">
+      <div className="mx-auto flex max-w-5xl gap-0 px-4">
+        <nav aria-label="Book tabs" className="relative w-28 shrink-0 pt-10">
+          {TABS.map(({ to, label, bg }, i) => (
+            <Link
+              key={to}
+              to={to}
+              style={{ backgroundColor: bg, marginLeft: `${i * 6}px` }}
+              className="diary-tab font-diary-title mb-3 block rounded-r-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
             >
-              Save
-            </button>
-          )}
-          <LockedAction
-            onClick={handleAccept}
-            className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+              {label}
+            </Link>
+          ))}
+          <span
+            aria-disabled="true"
+            style={{ backgroundColor: '#e7e5e4', marginLeft: `${TABS.length * 6}px` }}
+            className="diary-tab font-diary-title mb-3 block rounded-r-xl py-3 pl-4 pr-2 text-lg text-slate-400"
           >
-            {accepted || plan?.accepted ? 'Accepted' : 'Accept'}
-          </LockedAction>
-        </div>
-        {saveNotice && <p className="mt-2 text-sm text-slate-500">{saveNotice}</p>}
-        {saveError && <p role="alert" className="mt-2 text-sm text-red-700">{saveError}</p>}
+            Jobs (coming soon)
+          </span>
+        </nav>
 
-        <section className="mt-10 rounded-md border border-slate-200 p-6">
-          <h2 className="font-semibold text-slate-800">Your progress</h2>
-          <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-            <StatCard label="Completed" value={stats.completed} />
-            <StatCard label="In progress" value={stats.inProgress} />
-            <StatCard label="Upcoming" value={stats.upcoming} />
-            <StatCard label="Overdue" value={stats.overdue} />
+        <div className="diary-note min-w-0 flex-1 rounded-2xl p-6 sm:p-10">
+          <h1 className="font-diary-title text-4xl text-slate-800">Career Roadmap</h1>
+          <p className="font-diary-body mt-1 text-slate-500">A plan for the future me.</p>
+
+          <div className="mt-8 space-y-8">
+            {periodOrder.map((period) => (
+              <section key={period}>
+                <h2 className="font-diary-title text-2xl text-slate-800">{period}</h2>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  {roadmap
+                    .filter((a) => a.period === period)
+                    .map((activity, i) => {
+                      const palette = COLOURS[activity.colour]
+                      return (
+                        <div
+                          key={keyOf(activity)}
+                          data-testid={`checkpoint-${activity.title}`}
+                          style={{
+                            borderColor: palette.border,
+                            backgroundColor: palette.bg,
+                            transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+                          }}
+                          className="diary-note relative cursor-pointer rounded-lg border-2 p-4 pt-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                          onClick={() => setOpenKey(keyOf(activity))}
+                        >
+                          {activity.isPinned && (
+                            <p className="font-diary-title absolute -top-3 left-2 rounded bg-white px-1 text-sm font-semibold text-red-600 shadow-sm">
+                              📍 You are here
+                            </p>
+                          )}
+                          <p className="font-diary-title text-lg font-semibold text-slate-900">{activity.title}</p>
+                          <p className="font-diary-body text-xs text-slate-500">
+                            {activity.category} · Priority: {activity.priority}
+                          </p>
+                          <p className="font-diary-body mt-2 text-sm" style={{ color: palette.text }}>
+                            {activity.explanation}
+                          </p>
+                        </div>
+                      )
+                    })}
+                </div>
+              </section>
+            ))}
           </div>
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-slate-700">Progress by category</h3>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
-              {Object.entries(stats.byCategory).map(([category, { completed, total }]) => (
-                <li key={category}>
-                  {category}: {completed}/{total}
-                </li>
-              ))}
-            </ul>
+
+          <div
+            className="diary-note mt-10 -rotate-1 rounded-2xl p-6 text-center"
+            style={{ backgroundColor: GOAL_COLOURS.background, color: GOAL_COLOURS.text }}
+          >
+            <p className="font-diary-title text-2xl">🚩 Goal</p>
+            <p className="font-diary-title mt-1 text-3xl">Become a {profile?.targetOccupation}</p>
           </div>
-          <div className="mt-6">
-            <h3 className="text-sm font-semibold text-slate-700">Recent diary entries</h3>
-            <p className="mt-2 text-sm text-slate-500">No diary entries yet</p>
+
+          {openActivity && (
+            <div className="mt-6">
+              <CheckpointPanel
+                activity={openActivity}
+                onClose={() => setOpenKey(null)}
+                onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
+                onRemove={() => handleRemove(openActivity)}
+              />
+            </div>
+          )}
+
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            {(!user || !plan) && (
+              <button
+                type="button"
+                onClick={handleSave}
+                className="font-diary-title rounded-lg border-2 border-slate-300 bg-white px-6 py-2 text-lg text-slate-700 shadow-sm hover:bg-slate-50"
+              >
+                Save
+              </button>
+            )}
+            <LockedAction
+              onClick={handleAccept}
+              className="font-diary-title rounded-lg bg-indigo-700 px-6 py-2 text-lg text-white shadow-sm hover:bg-indigo-800"
+            >
+              {accepted || plan?.accepted ? 'Accepted' : 'Accept'}
+            </LockedAction>
           </div>
-        </section>
+          {saveNotice && <p className="font-diary-body mt-2 text-sm text-slate-500">{saveNotice}</p>}
+          {saveError && <p role="alert" className="font-diary-body mt-2 text-sm text-red-700">{saveError}</p>}
+
+          <section className="diary-note mt-10 rounded-2xl p-6">
+            <h2 className="font-diary-title text-2xl text-slate-800">Your progress</h2>
+            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+              <StatCard label="Completed" value={stats.completed} />
+              <StatCard label="In progress" value={stats.inProgress} />
+              <StatCard label="Upcoming" value={stats.upcoming} />
+              <StatCard label="Overdue" value={stats.overdue} />
+            </div>
+            <div className="mt-6">
+              <h3 className="font-diary-title text-lg text-slate-700">Progress by category</h3>
+              <ul className="font-diary-body mt-2 space-y-1 text-sm text-slate-600">
+                {Object.entries(stats.byCategory).map(([category, { completed, total }]) => (
+                  <li key={category}>
+                    {category}: {completed}/{total}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="mt-6">
+              <h3 className="font-diary-title text-lg text-slate-700">Recent diary entries</h3>
+              <p className="font-diary-body mt-2 text-sm text-slate-500">No diary entries yet</p>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
   )
@@ -267,13 +302,17 @@ export default function Roadmap() {
 
 function StatCard({ label, value }) {
   return (
-    <div className="rounded-md border border-slate-200 p-4 text-center">
-      <p className="text-2xl font-bold text-slate-900">{value}</p>
-      <p className="text-xs text-slate-500">{label}</p>
+    <div className="diary-note rounded-lg border border-slate-200 p-4 text-center">
+      <p className="font-diary-title text-3xl text-slate-900">{value}</p>
+      <p className="font-diary-body text-xs text-slate-500">{label}</p>
     </div>
   )
 }
 
 function Centered({ children, className = '' }) {
-  return <div className={`mx-auto max-w-2xl px-4 py-16 text-center ${className}`}>{children}</div>
+  return (
+    <div className="diary-paper flex min-h-screen items-center justify-center px-4">
+      <p className={`font-diary-title text-2xl text-slate-700 ${className}`}>{children}</p>
+    </div>
+  )
 }
