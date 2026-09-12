@@ -5,6 +5,7 @@ import Analysis from './pages/Analysis'
 import Plan from './pages/Plan'
 import Dashboard from './pages/Dashboard'
 import MarketUpdates from './pages/MarketUpdates'
+import SignUp from './pages/SignUp'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/plan" element={<Plan />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/updates" element={<MarketUpdates />} />
+        <Route path="/signup" element={<SignUp />} />
       </Routes>
     </div>
   )
