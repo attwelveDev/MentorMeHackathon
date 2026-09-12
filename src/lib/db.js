@@ -111,3 +111,37 @@ export async function setDiaryEntryFeedback(entryId, feedback) {
     .from('diary_entries').update({ ai_feedback: feedback }).eq('id', entryId)
   if (error) throw new Error(error.message)
 }
+
+export async function getSavedMarketUpdates(userId) {
+  const { data, error } = await supabase.from('saved_market_updates').select('*').eq('user_id', userId)
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function setMarketUpdateStatus(userId, sourceId, status) {
+  const { error } = await supabase.from('saved_market_updates')
+    .upsert({ user_id: userId, source_id: sourceId, status, updated_at: new Date().toISOString() }, { onConflict: 'user_id,source_id' })
+  if (error) throw new Error(error.message)
+}
+
+export async function addPlanActivityFromUpdate(planId, userId, activity) {
+  const { data, error } = await supabase.from('activities').insert({
+    plan_id: planId,
+    user_id: userId,
+    title: activity.title,
+    category: activity.category,
+    period_label: activity.periodLabel,
+    period_year: activity.periodYear,
+    priority: activity.priority,
+    explanation: activity.explanation,
+    status: 'Not started',
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function setUpdateFrequency(userId, frequency) {
+  const { error } = await supabase.from('profiles')
+    .update({ update_frequency: frequency, updated_at: new Date().toISOString() }).eq('user_id', userId)
+  if (error) throw new Error(error.message)
+}

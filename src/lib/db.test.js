@@ -5,6 +5,7 @@ vi.mock('./supabaseClient', () => ({ supabase: { from: (...args) => mockFrom(...
 import {
   getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity, getProfile, saveProfile,
   getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
+  getSavedMarketUpdates, setMarketUpdateStatus, addPlanActivityFromUpdate, setUpdateFrequency,
 } from './db'
 
 beforeEach(() => { mockFrom.mockReset() })
@@ -137,5 +138,38 @@ describe('diary entry helpers', () => {
   it("throws with the underlying message when createDiaryEntry's insert errors", async () => {
     mockFrom.mockReturnValueOnce(chain({ data: null, error: { message: 'boom' } }))
     await expect(createDiaryEntry('a1', 'u1', 'text')).rejects.toThrow('boom')
+  })
+})
+
+describe('market-update helpers', () => {
+  it('getSavedMarketUpdates returns the rows for a user', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: [{ source_id: 's1', status: 'saved' }], error: null }))
+    expect(await getSavedMarketUpdates('u1')).toEqual([{ source_id: 's1', status: 'saved' }])
+  })
+
+  it('setMarketUpdateStatus upserts a (user_id, source_id) row with the given status', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await expect(setMarketUpdateStatus('u1', 's1', 'saved')).resolves.toBeUndefined()
+    expect(mockFrom).toHaveBeenCalledWith('saved_market_updates')
+  })
+
+  it('addPlanActivityFromUpdate inserts one activities row and returns it', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: { id: 'a9' }, error: null }))
+    const result = await addPlanActivityFromUpdate('p1', 'u1', {
+      title: 'Investigate nurse shortage', category: 'Commercial and industry awareness',
+      periodLabel: 'Year 2', periodYear: 2026, priority: 'Medium', explanation: 'why',
+    })
+    expect(result).toEqual({ id: 'a9' })
+  })
+
+  it('setUpdateFrequency updates the profiles row for the given user', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await expect(setUpdateFrequency('u1', 'daily')).resolves.toBeUndefined()
+    expect(mockFrom).toHaveBeenCalledWith('profiles')
+  })
+
+  it('setMarketUpdateStatus throws with the underlying error message on failure', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
+    await expect(setMarketUpdateStatus('u1', 's1', 'saved')).rejects.toThrow('boom')
   })
 })

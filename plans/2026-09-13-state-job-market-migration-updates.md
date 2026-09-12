@@ -417,7 +417,7 @@ for this plan.
 - **Review gate:** **Human review:** sourcing/compliance surface (condition 2) — this is the prompt that produces the topic/status labels shown to students. Confirm the prompt wording in `src/lib/ai.js` names the exact same topic enum as `TOPICS` and doesn't invite the model to invent a value outside it.
 - **Depends on:** Task 3 (imports `TOPICS`).
 
-### Task 5: `db.js` persistence helpers
+### Task 5: `db.js` persistence helpers [x]
 
 - **Description:** Add the four new Supabase-backed functions this feature needs, following this file's existing error-handling convention exactly.
 - **Files touched:** `src/lib/db.js`, `src/lib/db.test.js`.
