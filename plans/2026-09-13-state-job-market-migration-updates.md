@@ -772,13 +772,13 @@ for this plan.
 
 ## 6. Feature-level Definition of Done
 
-- [ ] Every task in §5 complete and its tests passing
-- [ ] `npm test` passes
-- [ ] `npm run lint` — best-effort (repo currently has no `eslint.config.js`; skip if still absent, matching the precedent in `plans/2026-09-12-news-gating.md`)
-- [ ] Manually verified (`vercel dev`): sign in with a profile matching one seeded occupation/state → feed loads → filter by topic → filter by recency → search → open a card → Save (persists on reload) → Add to plan (appears on `/plan`) → Dismiss (disappears) → change frequency (persists on reload) → sign out → locked prompt still shows.
-- [ ] Every requirement in §2 is covered — see §7
-- [ ] Every gated task (Tasks 1, 4, 6, 7, 8) has been shown to the user and explicitly accepted
-- [ ] No item remains in §8
+- [x] Every task in §5 complete and its tests passing
+- [x] `npm test` passes (189 tests, 20 files)
+- [x] `npm run lint` — skipped: repo still has no `eslint.config.js`, matching the precedent in `plans/2026-09-12-news-gating.md`
+- [x] Manually verified (`vercel dev`): sign in with a profile matching one seeded occupation/state → feed loads → filter by topic → filter by recency → search → open a card → Save (persists on reload) → Add to plan (appears on `/plan`) → Dismiss (disappears) → change frequency (persists on reload) → sign out → locked prompt still shows. (Required applying Task 1's migrations to the live Supabase project by hand, and fixing a live-only Gemini markdown-fence bug — see Task 8's notes.)
+- [x] Every requirement in §2 is covered — see §7
+- [x] Every gated task (Tasks 1, 4, 6, 7, 8) has been shown to the user and explicitly accepted
+- [x] No item remains in §8
 
 ## 7. Requirements coverage check
 
@@ -797,4 +797,13 @@ for this plan.
 
 ## 8. Risks / open questions
 
-None.
+None outstanding for this plan. One pre-existing issue noticed, out of
+scope, and left unfixed: `Roadmap.jsx`'s `loadOrGenerate` effect depends
+only on `[user]`, and `useAuth()`'s `user` is briefly `null` while the
+initial `supabase.auth.getSession()` call resolves. A fresh full-page load
+of `/plan` (not an in-app `Link` navigation) can run the effect once with
+`user` still `null`, see no `state?.profile`, and `navigate('/profile')`
+before the real session resolves — even for a signed-in user who does have
+a saved plan. Reproduced live during Task 8 verification via a direct URL
+navigation to `/plan`; an in-app nav-link click to the same route did not
+trigger it. Affects `Roadmap.jsx` only, not any file this plan touches.
