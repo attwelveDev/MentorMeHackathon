@@ -112,6 +112,34 @@ export async function setDiaryEntryFeedback(entryId, feedback) {
   if (error) throw new Error(error.message)
 }
 
+export async function createActivity(planId, userId, activity) {
+  const { data, error } = await supabase.from('activities').insert({
+    plan_id: planId,
+    user_id: userId,
+    title: activity.title,
+    category: activity.category,
+    period_label: activity.period,
+    period_year: activity.periodYear ?? null,
+    priority: activity.priority,
+    explanation: activity.explanation ?? '',
+    due_date: activity.dueDate ?? null,
+    status: 'Not started',
+  }).select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function updateActivity(activityId, fields) {
+  const row = { updated_at: new Date().toISOString() }
+  if (fields.title !== undefined) row.title = fields.title
+  if (fields.category !== undefined) row.category = fields.category
+  if (fields.priority !== undefined) row.priority = fields.priority
+  if (fields.explanation !== undefined) row.explanation = fields.explanation
+  if (fields.dueDate !== undefined) row.due_date = fields.dueDate
+  const { error } = await supabase.from('activities').update(row).eq('id', activityId)
+  if (error) throw new Error(error.message)
+}
+
 export async function getSavedMarketUpdates(userId) {
   const { data, error } = await supabase.from('saved_market_updates').select('*').eq('user_id', userId)
   if (error) throw new Error(error.message)

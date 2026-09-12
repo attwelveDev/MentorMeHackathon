@@ -6,6 +6,7 @@ import {
   getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity, getProfile, saveProfile,
   getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
   getSavedMarketUpdates, setMarketUpdateStatus, addPlanActivityFromUpdate, setUpdateFrequency,
+  createActivity, updateActivity,
 } from './db'
 
 beforeEach(() => { mockFrom.mockReset() })
@@ -138,6 +139,33 @@ describe('diary entry helpers', () => {
   it("throws with the underlying message when createDiaryEntry's insert errors", async () => {
     mockFrom.mockReturnValueOnce(chain({ data: null, error: { message: 'boom' } }))
     await expect(createDiaryEntry('a1', 'u1', 'text')).rejects.toThrow('boom')
+  })
+})
+
+describe('createActivity / updateActivity', () => {
+  it('createActivity inserts a Not-started activity row and returns it', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: { id: 'a1', title: 'Talk to a mentor' }, error: null }))
+    const result = await createActivity('p1', 'u1', {
+      title: 'Talk to a mentor', category: 'Networking', priority: 'Medium',
+      period: 'Next break', explanation: '', dueDate: null,
+    })
+    expect(result).toEqual({ id: 'a1', title: 'Talk to a mentor' })
+  })
+
+  it('createActivity throws with the underlying message on failure', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: null, error: { message: 'boom' } }))
+    await expect(createActivity('p1', 'u1', { title: 'x', category: 'Networking', priority: 'Low', period: 'Now' }))
+      .rejects.toThrow('boom')
+  })
+
+  it('updateActivity resolves without throwing on success', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await expect(updateActivity('a1', { title: 'New title', dueDate: '2026-10-01' })).resolves.toBeUndefined()
+  })
+
+  it('updateActivity throws with the underlying message on failure', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
+    await expect(updateActivity('a1', { title: 'x' })).rejects.toThrow('boom')
   })
 })
 
