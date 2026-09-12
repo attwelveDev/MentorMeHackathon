@@ -7,6 +7,8 @@ import Diary from './pages/Diary'
 import MarketUpdates from './pages/MarketUpdates'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
 import { AuthProvider, useAuth } from './lib/auth'
 import GuestPlanMigrator from './components/GuestPlanMigrator'
 
@@ -45,6 +47,8 @@ export default function App() {
           <Route path="/updates" element={<MarketUpdates />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Routes>
       </div>
     </AuthProvider>

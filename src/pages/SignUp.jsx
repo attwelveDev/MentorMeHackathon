@@ -121,53 +121,44 @@ export default function SignUp() {
             )}
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-              <label htmlFor="name" className="diary-field flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 dark:border-slate-600">
-                <UserIcon className="h-4 w-4 shrink-0 text-slate-400" />
-                <span className="font-diary-body shrink-0 text-sm text-slate-600 dark:text-slate-300">Your name</span>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Hanna Truong"
-                  className="font-diary-body min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
-                />
-              </label>
+              <FloatingField
+                id="name"
+                label="Your name"
+                icon={<UserIcon className="h-4 w-4 shrink-0 text-slate-400" />}
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                hint="e.g. Hanna Truong"
+              />
 
-              <label htmlFor="email" className="diary-field flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 dark:border-slate-600">
-                <MailIcon className="h-4 w-4 shrink-0 text-slate-400" />
-                <span className="font-diary-body shrink-0 text-sm text-slate-600 dark:text-slate-300">Email address</span>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. hanna@gmail.com"
-                  className="font-diary-body min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
-                />
-              </label>
+              <FloatingField
+                id="email"
+                label="Email address"
+                icon={<MailIcon className="h-4 w-4 shrink-0 text-slate-400" />}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                hint="e.g. hanna@gmail.com"
+              />
 
-              <div className="diary-field flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2.5 dark:border-slate-600">
-                <label htmlFor="password" className="flex min-w-0 flex-1 items-center gap-2">
-                  <LockIcon className="h-4 w-4 shrink-0 text-slate-400" />
-                  <span className="font-diary-body shrink-0 text-sm text-slate-600 dark:text-slate-300">Create a password</span>
-                  <input
-                    id="password"
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="font-diary-body min-w-0 flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? 'Hide characters' : 'Show characters'}
-                  className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                >
-                  {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
-                </button>
-              </div>
+              <FloatingField
+                id="password"
+                label="Create a password"
+                icon={<LockIcon className="h-4 w-4 shrink-0 text-slate-400" />}
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                trailing={
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? 'Hide characters' : 'Show characters'}
+                    className="shrink-0 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  >
+                    {showPassword ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                  </button>
+                }
+              />
 
               <ul className="font-diary-body space-y-1 pl-1 text-xs text-slate-500 dark:text-slate-400">
                 {PASSWORD_RULES.map((rule) => {
@@ -196,13 +187,13 @@ export default function SignUp() {
 
             <p className="font-diary-body mt-4 text-xs text-slate-400 dark:text-slate-500">
               By creating an account, you agree to our{' '}
-              <a href="#terms" className="text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+              <Link to="/terms" className="text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
                 Terms of Service
-              </a>{' '}
+              </Link>{' '}
               and{' '}
-              <a href="#privacy" className="text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
+              <Link to="/privacy" className="text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
                 Privacy Policy
-              </a>
+              </Link>
               .
             </p>
           </div>
@@ -217,6 +208,40 @@ export default function SignUp() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// Field with a label that starts centred like a placeholder, then shrinks to
+// the top-left corner on focus or once a value is entered (Google-style).
+function FloatingField({ id, label, icon, type, value, onChange, hint, trailing }) {
+  const [focused, setFocused] = useState(false)
+  const floated = focused || value.length > 0
+
+  return (
+    <div className="diary-field flex items-center gap-2 rounded-xl border border-slate-300 px-3 dark:border-slate-600">
+      {icon}
+      <div className="relative h-11 min-w-0 flex-1">
+        <label
+          htmlFor={id}
+          className={`font-diary-body pointer-events-none absolute left-0 text-slate-500 transition-all duration-150 dark:text-slate-400 ${
+            floated ? 'top-1 text-[10px]' : 'top-1/2 -translate-y-1/2 text-sm'
+          }`}
+        >
+          {label}
+        </label>
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onChange={onChange}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholder={floated ? hint : ''}
+          className="font-diary-body absolute inset-x-0 bottom-0 h-6 w-full bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
+        />
+      </div>
+      {trailing}
     </div>
   )
 }
