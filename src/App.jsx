@@ -3,6 +3,7 @@ import Welcome from './pages/Welcome'
 import Profile from './pages/Profile'
 import Analysis from './pages/Analysis'
 import Roadmap from './pages/Roadmap'
+import Diary from './pages/Diary'
 import MarketUpdates from './pages/MarketUpdates'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/analysis" element={<Analysis />} />
           <Route path="/plan" element={<Roadmap />} />
+          <Route path="/diary" element={<Diary />} />
           <Route path="/updates" element={<MarketUpdates />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path="/login" element={<Login />} />
