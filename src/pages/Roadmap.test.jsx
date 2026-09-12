@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, within, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { periodYearFor } from '../lib/roadmap'
 
@@ -315,7 +315,7 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     renderRoadmap()
     await screen.findByRole('heading', { name: 'Year 1' })
     fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Completed' } })
+    fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'Completed' } })
     await waitFor(() => expect(updateActivityStatus).toHaveBeenCalledWith('a4', 'Completed'))
     // once completed, this checkpoint is no longer the pinned "current" one (colour green, no pin marker on it)
     await waitFor(() => {
@@ -337,7 +337,7 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     renderRoadmap()
     await screen.findByRole('heading', { name: 'Year 1' })
     fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
-    fireEvent.click(screen.getByRole('button', { name: /remove/i }))
+    fireEvent.click(await screen.findByRole('button', { name: /remove/i }))
     await waitFor(() => expect(deleteActivity).toHaveBeenCalledWith('a4'))
     await waitFor(() => expect(screen.queryAllByText('Apply for internships')).toHaveLength(0))
   })
@@ -361,8 +361,32 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     await waitFor(() => expect(createPlanWithActivities).toHaveBeenCalledWith('u1', 'Data Analyst', rawActivities))
     // once persisted, activities carry real ids - status changes now target them
     fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Completed' } })
+    fireEvent.change(await screen.findByRole('combobox'), { target: { value: 'Completed' } })
     await waitFor(() => expect(updateActivityStatus).toHaveBeenCalledWith('a4', 'Completed'))
+  })
+
+  it('shows a loading indicator instead of the checkpoint panel while diary entries are being fetched for a signed-in user, then reveals the panel with entries loaded', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    let resolveEntries
+    getDiaryEntriesForActivity.mockReturnValue(new Promise((resolve) => { resolveEntries = resolve }))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByText(/loading/i)).toBeInTheDocument()
+    await act(async () => {
+      resolveEntries([{ id: 'd1', entry_text: 'Existing entry', created_at: '2026-09-01T00:00:00Z' }])
+      await Promise.resolve()
+    })
+    expect(await screen.findByRole('dialog', { name: 'Apply for internships' })).toBeInTheDocument()
+    expect(screen.getByText('Existing entry')).toBeInTheDocument()
   })
 
   it('opening the panel for a signed-in user calls getDiaryEntriesForActivity(activity.id) and passes the result to CheckpointPanel', async () => {
@@ -396,8 +420,7 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     renderRoadmap()
     await screen.findByRole('heading', { name: 'Year 1' })
     fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
-    await waitFor(() => expect(getDiaryEntriesForActivity).toHaveBeenCalled())
-    fireEvent.change(screen.getByRole('textbox', { name: /diary entry/i }), { target: { value: 'New entry text' } })
+    fireEvent.change(await screen.findByRole('textbox', { name: /diary entry/i }), { target: { value: 'New entry text' } })
     fireEvent.click(screen.getByRole('button', { name: /add entry/i }))
     await waitFor(() => expect(createDiaryEntry).toHaveBeenCalledWith('a4', 'u1', 'New entry text'))
     expect(await screen.findByText('New entry text')).toBeInTheDocument()

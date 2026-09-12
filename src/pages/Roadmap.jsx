@@ -57,6 +57,7 @@ export default function Roadmap() {
   const [error, setError] = useState(null)
   const [openKey, setOpenKey] = useState(null)
   const [diaryEntries, setDiaryEntries] = useState([])
+  const [diaryEntriesLoading, setDiaryEntriesLoading] = useState(false)
   const [recentDiaryEntries, setRecentDiaryEntries] = useState([])
   const [saveNotice, setSaveNotice] = useState(null)
   const [saveError, setSaveError] = useState(null)
@@ -137,14 +138,20 @@ export default function Roadmap() {
     if (user && openKey != null) {
       const activity = (activities ?? []).find((a) => keyOf(a) === openKey)
       if (activity?.id) {
+        setDiaryEntriesLoading(true)
         getDiaryEntriesForActivity(activity.id).then((entries) => {
-          if (!cancelled) setDiaryEntries(entries)
+          if (!cancelled) {
+            setDiaryEntries(entries)
+            setDiaryEntriesLoading(false)
+          }
         })
       } else {
         setDiaryEntries([])
+        setDiaryEntriesLoading(false)
       }
     } else {
       setDiaryEntries([])
+      setDiaryEntriesLoading(false)
     }
     return () => { cancelled = true }
   }, [user, openKey, activities])
@@ -369,15 +376,21 @@ export default function Roadmap() {
           onClick={() => setOpenKey(null)}
         >
           <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <CheckpointPanel
-              activity={openActivity}
-              onClose={() => setOpenKey(null)}
-              onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
-              onRemove={() => handleRemove(openActivity)}
-              diaryEntries={diaryEntries}
-              onAddEntry={handleAddEntry}
-              onRequestFeedback={handleRequestFeedback}
-            />
+            {user && diaryEntriesLoading ? (
+              <div className="diary-note rounded-2xl border-2 border-amber-100 bg-white p-6 text-center">
+                <p className="font-diary-title text-lg text-slate-600">Loading…</p>
+              </div>
+            ) : (
+              <CheckpointPanel
+                activity={openActivity}
+                onClose={() => setOpenKey(null)}
+                onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
+                onRemove={() => handleRemove(openActivity)}
+                diaryEntries={diaryEntries}
+                onAddEntry={handleAddEntry}
+                onRequestFeedback={handleRequestFeedback}
+              />
+            )}
           </div>
         </div>
       )}

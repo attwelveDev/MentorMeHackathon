@@ -10,12 +10,24 @@ function formatTimestamp(isoString) {
 
 function DiarySection({ diaryEntries = [], onAddEntry, onRequestFeedback }) {
   const [text, setText] = useState('')
+  const [pendingFeedbackIds, setPendingFeedbackIds] = useState(() => new Set())
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!text.trim()) return
     onAddEntry(text)
     setText('')
+  }
+
+  function handleRequestFeedback(entryId) {
+    setPendingFeedbackIds((prev) => new Set(prev).add(entryId))
+    Promise.resolve(onRequestFeedback(entryId)).finally(() => {
+      setPendingFeedbackIds((prev) => {
+        const next = new Set(prev)
+        next.delete(entryId)
+        return next
+      })
+    })
   }
 
   return (
@@ -27,11 +39,16 @@ function DiarySection({ diaryEntries = [], onAddEntry, onRequestFeedback }) {
             <p className="text-slate-800">{entry.entry_text}</p>
             <p className="mt-1 text-xs text-slate-500">{formatTimestamp(entry.created_at)}</p>
             {entry.ai_feedback ? (
-              <p className="mt-2 rounded-md bg-indigo-50 p-2 text-sm text-indigo-800">{entry.ai_feedback}</p>
+              <div className="mt-2 rounded-md bg-indigo-50 p-2 text-sm text-indigo-800">
+                <p className="text-xs font-semibold uppercase tracking-wide text-indigo-500">Feedback</p>
+                <p className="mt-1">{entry.ai_feedback}</p>
+              </div>
+            ) : pendingFeedbackIds.has(entry.id) ? (
+              <p className="mt-2 text-sm text-slate-500">Getting feedback…</p>
             ) : (
               <button
                 type="button"
-                onClick={() => onRequestFeedback(entry.id)}
+                onClick={() => handleRequestFeedback(entry.id)}
                 className="mt-2 text-sm text-indigo-700 hover:underline"
               >
                 Get AI feedback
