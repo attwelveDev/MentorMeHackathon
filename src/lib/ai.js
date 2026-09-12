@@ -1,6 +1,7 @@
 // Client-side helper for calling the /api/generate serverless function
 // (see api/generate.js). Keeps the Gemini API key server-side only.
 import { getExpectedPeriodLabels } from './roadmap'
+import { TOPICS } from './marketUpdates'
 
 async function callGenerate(prompt, task) {
   const response = await fetch('/api/generate', {
@@ -73,6 +74,7 @@ Return a JSON object with:
 - headline: string
 - summary: string (2-3 sentences, factual)
 - statusLabel: "Confirmed change" | "Proposal" | "Forecast" | "Research" | "Commentary"
+- topic: one of exactly these values: ${JSON.stringify(TOPICS)}
 - whyItMatters: string (relevance to this student's career goal)
 Do not include any text outside the JSON object.`
   const { text } = await callGenerate(prompt, 'market-update')

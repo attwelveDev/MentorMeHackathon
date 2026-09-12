@@ -370,7 +370,7 @@ for this plan.
 - **Review gate:** No gate — green tests + acceptance criteria are sufficient (pure derived logic; the enum values it enforces are reviewed as part of Task 4/Task 8's sourcing-surface gates, not here).
 - **Depends on:** None.
 
-### Task 4: `summariseMarketUpdate` — add `topic` classification
+### Task 4: `summariseMarketUpdate` — add `topic` classification [x]
 
 - **Description:** Extend the existing prompt/return-shape so each summarised item also carries a `topic` from the fixed enum, alongside its existing `statusLabel`.
 - **Files touched:** `src/lib/ai.js`, `src/lib/ai.test.js`.

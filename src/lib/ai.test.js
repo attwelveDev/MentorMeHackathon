@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getCareerReadinessAnalysis, generateCareerPlan, getDiaryFeedback } from './ai'
+import { getCareerReadinessAnalysis, generateCareerPlan, getDiaryFeedback, summariseMarketUpdate } from './ai'
+import { TOPICS } from './marketUpdates'
 
 beforeEach(() => {
   global.fetch = vi.fn().mockResolvedValue({
@@ -42,6 +43,17 @@ describe('generateCareerPlan', () => {
     expect(body.prompt).toContain('Before graduating')
     expect(body.prompt).toContain('Year 1 after graduating')
     expect(body.prompt).toMatch(/already graduated/i)
+  })
+})
+
+describe('summariseMarketUpdate', () => {
+  it('asks the model to classify a topic from the fixed enum, alongside headline/summary/statusLabel/whyItMatters', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ task: 'market-update', text: '{}' }) })
+    await summariseMarketUpdate({ sourceText: 'Nurses in shortage', occupation: 'Registered Nurse', state: 'NSW' })
+    const [, options] = global.fetch.mock.calls[0]
+    const body = JSON.parse(options.body)
+    TOPICS.forEach((topic) => expect(body.prompt).toContain(`"${topic}"`))
+    expect(body.prompt).toContain('- topic:')
   })
 })
 
