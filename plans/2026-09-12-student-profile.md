@@ -451,6 +451,11 @@ task after Task 1 is independently testable via `npm test`.
   - Submitting with all (currently 3) required fields filled calls
     `mockNavigate('/analysis', { state: { profile: expect.objectContaining({...}) } })`.
 - **Depends on:** Task 1.
+- **Status:** Done. Note: the `Field` `Component` (input/textarea) must
+  receive `children={null}`, not `false`, when not rendering `<option>`s —
+  React's void-element check treats `false` as a non-null children value and
+  throws; this only surfaced once the `select` variant's children were added
+  in this same task's `Field` signature, ahead of Task 5/6's select fields.
 
 ### Task 5: Convert education sector, study stage, and state to dropdowns backed by `profileOptions.js`; add education sector field
 
