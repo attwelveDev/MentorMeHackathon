@@ -55,6 +55,20 @@ describe('computeRoadmap', () => {
     expect(result.filter((a) => a.isPinned)).toHaveLength(1)
   })
 
+  it('prefers an activity\'s own already-known periodYear over recomputing from profile (e.g. loaded from Supabase without a full profile)', () => {
+    const sparseProfile = { targetOccupation: 'Data Analyst' } // no studyStage/graduationYear/courseLengthYears
+    const activities = [
+      { title: 'Loaded past activity', period: 'Year 1', periodYear: 2024, status: 'Completed', category: 'Technical skills', priority: 'High', explanation: '' },
+      { title: 'Loaded future activity', period: 'Year 3', periodYear: 2026, status: 'Not started', category: 'Work experience', priority: 'High', explanation: '' },
+    ]
+    const result = computeRoadmap(activities, sparseProfile, 2026)
+    const byTitle = Object.fromEntries(result.map((a) => [a.title, a]))
+    expect(byTitle['Loaded past activity'].periodYear).toBe(2024)
+    expect(byTitle['Loaded past activity'].colour).toBe('completed')
+    expect(byTitle['Loaded future activity'].periodYear).toBe(2026)
+    expect(byTitle['Loaded future activity'].colour).toBe('current')
+  })
+
   it('forces the "Before graduating" activity to Completed/green regardless of its input status', () => {
     const result = computeRoadmap([
       { title: 'Everything before graduating', period: 'Before graduating', status: 'Not started', category: 'Application preparation', priority: 'Low', explanation: '' },

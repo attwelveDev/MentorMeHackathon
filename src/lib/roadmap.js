@@ -24,7 +24,9 @@ export function computeRoadmap(activities, profile, currentYear = new Date().get
   const withYear = activities.map((a) => ({
     ...a,
     status: a.period === 'Before graduating' ? 'Completed' : a.status,
-    periodYear: periodYearFor(a.period, profile),
+    periodYear: a.period === 'Before graduating'
+      ? null
+      : (a.periodYear ?? periodYearFor(a.period, profile)),
   }))
   const ordered = [...withYear].sort((a, b) => {
     if (a.periodYear === b.periodYear) return 0
