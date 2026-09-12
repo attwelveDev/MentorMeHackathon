@@ -542,7 +542,7 @@ for this plan.
 - **Review gate:** **Human review:** sourcing/compliance surface (condition 2) — this is real user-facing job-market/migration content. Confirm each item's `source`/`publishedDate`/`retrievedDate` against the actual URL before accepting.
 - **Depends on:** None.
 
-### Task 7: `src/components/UpdateDetailPanel.jsx`
+### Task 7: `src/components/UpdateDetailPanel.jsx` [x]
 
 - **Description:** New modal detail panel (mirrors `CheckpointPanel.jsx`'s structure) shown when a card is clicked — full "why this matters," source/date/status-label detail, and Save/Dismiss/Add-to-plan actions.
 - **Files touched:** new `src/components/UpdateDetailPanel.jsx`, new `src/components/UpdateDetailPanel.test.jsx`.
@@ -618,7 +618,12 @@ for this plan.
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="font-diary-title text-2xl font-semibold text-slate-900">{update.headline}</p>
-            <p className="font-diary-body text-xs text-slate-500">{update.topic} · {update.statusLabel}</p>
+            {/* Phase 1 correction: topic/statusLabel split into separate <span>s —
+                a single concatenated "{topic} · {statusLabel}" string fails the test's
+                getByText('Research') exact-match query below */}
+            <p className="font-diary-body text-xs text-slate-500">
+              <span>{update.topic}</span> · <span>{update.statusLabel}</span>
+            </p>
           </div>
           <button type="button" onClick={onClose} className="font-diary-title text-lg text-slate-500 hover:text-slate-800">Close</button>
         </div>
