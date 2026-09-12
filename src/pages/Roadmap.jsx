@@ -2,8 +2,17 @@ import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { generateCareerPlan } from '../lib/ai'
-import { getPlanWithActivities } from '../lib/db'
+import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
+import { saveGuestPlan } from '../lib/localPlan'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
+import LockedAction from '../components/LockedAction'
+import CheckpointPanel from '../components/CheckpointPanel'
+
+const SAVE_NOTICE = "Saved to this browser. This plan is only saved on this device/browser — it survives closing this tab, but is lost if you clear this browser's site data or switch device/browser."
+
+function keyOf(activity) {
+  return activity.id ?? activity.title
+}
 
 const COLOURS = {
   completed: '#16a34a',
@@ -37,6 +46,10 @@ export default function Roadmap() {
   const [activities, setActivities] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [openKey, setOpenKey] = useState(null)
+  const [saveNotice, setSaveNotice] = useState(null)
+  const [saveError, setSaveError] = useState(null)
+  const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -100,6 +113,50 @@ export default function Roadmap() {
   roadmap.forEach((a) => {
     if (!periodOrder.includes(a.period)) periodOrder.push(a.period)
   })
+  const openActivity = openKey == null ? null : roadmap.find((a) => keyOf(a) === openKey) ?? null
+
+  async function handleStatusChange(activity, newStatus) {
+    if (activity.id) {
+      await updateActivityStatus(activity.id, newStatus)
+    }
+    setActivities((prev) => prev.map((a) => (keyOf(a) === keyOf(activity) ? { ...a, status: newStatus } : a)))
+  }
+
+  async function handleRemove(activity) {
+    if (activity.id) {
+      await deleteActivity(activity.id)
+    }
+    setActivities((prev) => prev.filter((a) => keyOf(a) !== keyOf(activity)))
+    setOpenKey(null)
+  }
+
+  async function handleSave() {
+    setSaveError(null)
+    setSaveNotice(null)
+    if (user) {
+      try {
+        const created = await createPlanWithActivities(user.id, profile?.targetOccupation, activities)
+        setPlan(created.plan)
+        setActivities(created.activities.map(mapDbActivity))
+        setSaveNotice('Saved to your account.')
+      } catch {
+        setSaveError('We could not save your plan. Please try again.')
+      }
+      return
+    }
+    const result = saveGuestPlan(profile, activities)
+    if (result.ok) {
+      setSaveNotice(SAVE_NOTICE)
+    } else {
+      setSaveError(result.error)
+    }
+  }
+
+  async function handleAccept() {
+    if (!plan) return
+    await setPlanAccepted(plan.id, true)
+    setAccepted(true)
+  }
 
   return (
     <div className="mx-auto flex max-w-5xl gap-6 px-4 py-12">
@@ -120,10 +177,11 @@ export default function Roadmap() {
                   .filter((a) => a.period === period)
                   .map((activity) => (
                     <div
-                      key={activity.id ?? activity.title}
+                      key={keyOf(activity)}
                       data-testid={`checkpoint-${activity.title}`}
                       style={{ borderColor: COLOURS[activity.colour] }}
-                      className="rounded-md border-2 p-4"
+                      className="cursor-pointer rounded-md border-2 p-4"
+                      onClick={() => setOpenKey(keyOf(activity))}
                     >
                       {activity.isPinned && (
                         <p className="text-xs font-semibold" style={{ color: COLOURS.current }}>
@@ -147,6 +205,37 @@ export default function Roadmap() {
         >
           Become a {profile?.targetOccupation}
         </div>
+
+        {openActivity && (
+          <div className="mt-6">
+            <CheckpointPanel
+              activity={openActivity}
+              onClose={() => setOpenKey(null)}
+              onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
+              onRemove={() => handleRemove(openActivity)}
+            />
+          </div>
+        )}
+
+        <div className="mt-8 flex flex-wrap items-center gap-4">
+          {(!user || !plan) && (
+            <button
+              type="button"
+              onClick={handleSave}
+              className="rounded-md border border-slate-300 px-6 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              Save
+            </button>
+          )}
+          <LockedAction
+            onClick={handleAccept}
+            className="rounded-md bg-indigo-600 px-6 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+          >
+            {accepted || plan?.accepted ? 'Accepted' : 'Accept'}
+          </LockedAction>
+        </div>
+        {saveNotice && <p className="mt-2 text-sm text-slate-500">{saveNotice}</p>}
+        {saveError && <p role="alert" className="mt-2 text-sm text-red-700">{saveError}</p>}
 
         <section className="mt-10 rounded-md border border-slate-200 p-6">
           <h2 className="font-semibold text-slate-800">Your progress</h2>

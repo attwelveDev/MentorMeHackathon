@@ -682,7 +682,33 @@ strip).
   intended before Task 6 adds the interactive/gated controls on top of it.
 - **Depends on:** Tasks 1, 2, 4 (and Phase 2's `useAuth`).
 
+### Amendment (2026-09-12, after Task 6 review): Save persists a freshly-generated registered-user plan to Supabase
+
+Discovered while presenting Task 6 for review: requirement 2.1.8 says "a
+plan is generated and, once Saved, persisted to Supabase" for a registered
+user with no existing plan — but Task 6 as written only wires Save for
+guests (`localPlan.js`) and Accept for registered users (`setPlanAccepted`).
+`createPlanWithActivities` (built in Task 4) was never called from anywhere,
+so that half of 2.1.8 was actually unmet despite the coverage table listing
+it under Tasks 4/5. Patched with the user's approval: `Roadmap.jsx`'s Save
+button is now also shown to a signed-in user who has no persisted `plan`
+yet (i.e. `user && !plan`), and calls `createPlanWithActivities(user.id,
+profile.targetOccupation, activities)` instead of `saveGuestPlan`, storing
+the returned `plan` and re-mapping the returned (now id-bearing) activities
+into state so subsequent status-change/remove calls have real activity ids.
+Save is hidden once a plan is already persisted (registered user with an
+existing `plan`), since edits after that point persist immediately via
+`updateActivityStatus`/`deleteActivity`. No schema change; `db.js` and
+`localPlan.js` unchanged.
+
 ### Task 6: Checkpoint detail panel, Save, Accept, edit, and status-change
+
+**Status: Done — human review accepted by user, 2026-09-12** (including the
+Save-persists-a-fresh-registered-plan amendment above; visually verified the
+guest path via `vercel dev`: locked status/Remove/Accept controls, real
+localStorage save with correct on-device notice text; registered-user paths
+covered by 10 passing tests since creating a real Supabase account isn't
+something this assistant does).
 
 - **Description:** Clicking any roadmap checkpoint opens a `CheckpointPanel`
   showing that activity's detail (title, category, priority, explanation,

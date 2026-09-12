@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
 vi.mock('./supabaseClient', () => ({ supabase: { from: (...args) => mockFrom(...args) } }))
-import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted } from './db'
+import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from './db'
 
 beforeEach(() => { mockFrom.mockReset() })
 
@@ -10,7 +10,7 @@ function chain(result) {
   const builder = {
     select: () => builder, eq: () => builder, order: () => builder,
     limit: () => builder, single: () => Promise.resolve(result), maybeSingle: () => Promise.resolve(result),
-    insert: () => builder, update: () => builder,
+    insert: () => builder, update: () => builder, delete: () => builder,
     then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
   }
   return builder
@@ -57,5 +57,13 @@ describe('updateActivityStatus / setPlanAccepted', () => {
   it('setPlanAccepted resolves without throwing on success', async () => {
     mockFrom.mockReturnValueOnce(chain({ error: null }))
     await expect(setPlanAccepted('p1', true)).resolves.toBeUndefined()
+  })
+  it('deleteActivity resolves without throwing on success', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await expect(deleteActivity('a1')).resolves.toBeUndefined()
+  })
+  it('deleteActivity throws with the underlying error message on failure', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
+    await expect(deleteActivity('a1')).rejects.toThrow('boom')
   })
 })

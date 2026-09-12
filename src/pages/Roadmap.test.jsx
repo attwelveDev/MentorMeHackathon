@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { periodYearFor } from '../lib/roadmap'
 
@@ -13,10 +13,18 @@ vi.mock('react-router-dom', async (importOriginal) => {
 })
 
 vi.mock('../lib/ai', () => ({ generateCareerPlan: vi.fn() }))
-vi.mock('../lib/db', () => ({ getPlanWithActivities: vi.fn() }))
+vi.mock('../lib/db', () => ({
+  getPlanWithActivities: vi.fn(),
+  createPlanWithActivities: vi.fn(),
+  updateActivityStatus: vi.fn(),
+  setPlanAccepted: vi.fn(),
+  deleteActivity: vi.fn(),
+}))
+vi.mock('../lib/localPlan', () => ({ saveGuestPlan: vi.fn() }))
 
 import { generateCareerPlan } from '../lib/ai'
-import { getPlanWithActivities } from '../lib/db'
+import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
+import { saveGuestPlan } from '../lib/localPlan'
 import Roadmap from './Roadmap'
 
 const studentProfile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4', targetOccupation: 'Data Analyst' }
@@ -44,6 +52,11 @@ beforeEach(() => {
   mockUseLocation.mockReset()
   generateCareerPlan.mockReset()
   getPlanWithActivities.mockReset()
+  createPlanWithActivities.mockReset()
+  updateActivityStatus.mockReset().mockResolvedValue(undefined)
+  setPlanAccepted.mockReset().mockResolvedValue(undefined)
+  deleteActivity.mockReset().mockResolvedValue(undefined)
+  saveGuestPlan.mockReset().mockReturnValue({ ok: true })
 })
 
 describe('Roadmap — guest, fresh generation', () => {
@@ -168,5 +181,152 @@ describe('Roadmap — registered user', () => {
     expect(await screen.findByRole('heading', { name: 'Year 1' })).toBeInTheDocument()
     expect(getPlanWithActivities).toHaveBeenCalledTimes(1)
     expect(generateCareerPlan).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('Roadmap — checkpoint panel, Save, Accept', () => {
+  it('clicking a checkpoint opens CheckpointPanel showing that activity\'s title', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    expect(screen.getByRole('dialog', { name: 'Apply for internships' })).toBeInTheDocument()
+  })
+
+  it('closing the panel via its close control hides it', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    fireEvent.click(screen.getByRole('button', { name: /close/i }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('clicking Save as a guest calls saveGuestPlan and shows the on-device-only notice text (not "lost if you close the tab")', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(saveGuestPlan).toHaveBeenCalledWith(studentProfile, expect.any(Array))
+    const notice = await screen.findByText(/only saved (on|to) this (browser|device)/i)
+    expect(notice.textContent).not.toMatch(/lost if you close the tab/i)
+  })
+
+  it('shows an inline error, not a silent no-op, when saveGuestPlan returns { ok: false, error }', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    saveGuestPlan.mockReturnValue({ ok: false, error: 'Could not save to this browser.' })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(await screen.findByText('Could not save to this browser.')).toBeInTheDocument()
+  })
+
+  it('renders Accept as a locked LockedAction, linking to /signup, for a signed-out guest', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    const acceptLink = screen.getByRole('link', { name: /accept/i })
+    expect(acceptLink).toHaveAttribute('href', '/signup')
+  })
+
+  it('renders Accept as an active button for a signed-in user, calling setPlanAccepted(plan.id, true) when clicked', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByRole('button', { name: /accept/i }))
+    expect(setPlanAccepted).toHaveBeenCalledWith('p1', true)
+  })
+
+  it('changing an activity\'s status inside the open panel, as a signed-in user, calls updateActivityStatus(activity.id, newStatus) and the checkpoint\'s rendered colour updates', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Completed' } })
+    await waitFor(() => expect(updateActivityStatus).toHaveBeenCalledWith('a4', 'Completed'))
+    // once completed, this checkpoint is no longer the pinned "current" one (colour green, no pin marker on it)
+    await waitFor(() => {
+      const checkpoint = screen.getByTestId('checkpoint-Apply for internships')
+      expect(within(checkpoint).queryByText(/you are here/i)).not.toBeInTheDocument()
+      expect(checkpoint.style.borderColor).toBe('rgb(22, 163, 74)')
+    })
+  })
+
+  it('removing an activity inside the open panel, as a signed-in user, removes it from the rendered roadmap', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    fireEvent.click(screen.getByRole('button', { name: /remove/i }))
+    await waitFor(() => expect(deleteActivity).toHaveBeenCalledWith('a4'))
+    await waitFor(() => expect(screen.queryAllByText('Apply for internships')).toHaveLength(0))
+  })
+
+  it('for a signed-in user with a freshly-generated plan (no existing saved plan), clicking Save calls createPlanWithActivities and persists it to Supabase', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    getPlanWithActivities.mockResolvedValue(null)
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    createPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: rawActivities.map((a, i) => ({
+        id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+        period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+        explanation: a.explanation, status: a.status,
+      })),
+    })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    await waitFor(() => expect(createPlanWithActivities).toHaveBeenCalledWith('u1', 'Data Analyst', rawActivities))
+    // once persisted, activities carry real ids - status changes now target them
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Completed' } })
+    await waitFor(() => expect(updateActivityStatus).toHaveBeenCalledWith('a4', 'Completed'))
+  })
+
+  it('does not render a Save button for a signed-in user who already has a persisted plan', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    expect(screen.queryByRole('button', { name: /^save$/i })).not.toBeInTheDocument()
   })
 })

@@ -43,3 +43,8 @@ export async function setPlanAccepted(planId, accepted) {
     .update({ accepted, updated_at: new Date().toISOString() }).eq('id', planId)
   if (error) throw new Error(error.message)
 }
+
+export async function deleteActivity(activityId) {
+  const { error } = await supabase.from('activities').delete().eq('id', activityId)
+  if (error) throw new Error(error.message)
+}
