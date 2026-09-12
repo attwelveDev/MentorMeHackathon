@@ -15,10 +15,15 @@ export default function Welcome() {
       >
         Create my career plan
       </Link>
-      <p className="mt-6 text-xs text-slate-400">
+      <p data-testid="ai-notice" className="mt-6 text-xs text-slate-400">
         CareerCompass AU provides general career guidance, not employment guarantees,
         or migration, visa, legal, financial or licensing advice. AI-generated content
         may be incomplete or inaccurate — always verify with official sources.
+      </p>
+      <p data-testid="privacy-statement" className="mt-2 text-xs text-slate-400">
+        Your profile stays in this browser session for now — it is not saved to an
+        account. It's sent to Google's Gemini API solely to generate the guidance
+        shown to you.
       </p>
     </div>
   )
