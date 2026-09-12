@@ -1,6 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { EDUCATION_SECTORS, STUDY_STAGES, AU_STATES } from '../lib/profileOptions'
+import {
+  EDUCATION_SECTORS,
+  STUDY_STAGES,
+  AU_STATES,
+  EMPLOYMENT_ARRANGEMENTS,
+  WORK_LOCATION_MODES,
+} from '../lib/profileOptions'
 
 // Screen 2: Student profile
 const REQUIRED_FIELDS = ['qualification', 'studyStage', 'targetOccupation', 'educationSector']
@@ -17,7 +23,9 @@ export default function Profile() {
     skills: '',
     certifications: '',
     experience: '',
-    preferredSetting: '',
+    employmentArrangement: '',
+    workLocationMode: '',
+    otherPreferences: '',
     licences: '',
     state: '',
   })
@@ -132,11 +140,29 @@ export default function Profile() {
           error={fieldErrors.experience}
         />
         <Field
-          id="preferredSetting"
-          label="Preferred work setting"
-          value={form.preferredSetting}
-          onChange={(v) => updateField('preferredSetting', v)}
-          error={fieldErrors.preferredSetting}
+          id="employmentArrangement"
+          label="Preferred employment arrangement"
+          value={form.employmentArrangement}
+          onChange={(v) => updateField('employmentArrangement', v)}
+          type="select"
+          options={EMPLOYMENT_ARRANGEMENTS}
+          error={fieldErrors.employmentArrangement}
+        />
+        <Field
+          id="workLocationMode"
+          label="Preferred work location mode"
+          value={form.workLocationMode}
+          onChange={(v) => updateField('workLocationMode', v)}
+          type="select"
+          options={WORK_LOCATION_MODES}
+          error={fieldErrors.workLocationMode}
+        />
+        <Field
+          id="otherPreferences"
+          label="Other work preferences (culture, sector type, etc.)"
+          value={form.otherPreferences}
+          onChange={(v) => updateField('otherPreferences', v)}
+          error={fieldErrors.otherPreferences}
         />
         <Field
           id="licences"

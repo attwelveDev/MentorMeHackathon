@@ -1,6 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/react'
-import { EDUCATION_SECTORS, STUDY_STAGES, AU_STATES } from '../lib/profileOptions'
+import {
+  EDUCATION_SECTORS,
+  STUDY_STAGES,
+  AU_STATES,
+  EMPLOYMENT_ARRANGEMENTS,
+  WORK_LOCATION_MODES,
+} from '../lib/profileOptions'
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -67,5 +73,30 @@ describe('Profile dropdown fields', () => {
     expect(screen.getByLabelText(/current study stage/i).tagName).toBe('SELECT')
     expect(screen.getByLabelText(/australian state or territory/i).tagName).toBe('SELECT')
     expect(STUDY_STAGES.length + AU_STATES.length).toBeGreaterThan(0)
+  })
+})
+
+describe('Profile work-preference fields', () => {
+  it('renders employment arrangement and work location mode as selects, and other preferences as free text', () => {
+    render(<Profile />)
+    expect(screen.getByLabelText(/preferred employment arrangement/i).tagName).toBe('SELECT')
+    expect(screen.getByLabelText(/preferred work location mode/i).tagName).toBe('SELECT')
+    expect(screen.getByLabelText(/other work preferences/i).tagName).toBe('INPUT')
+    EMPLOYMENT_ARRANGEMENTS.forEach((opt) => expect(screen.getAllByRole('option', { name: opt.label }).length).toBeGreaterThan(0))
+  })
+
+  it('does not render a "preferred work setting" field anymore', () => {
+    render(<Profile />)
+    expect(screen.queryByLabelText(/preferred work setting/i)).not.toBeInTheDocument()
+  })
+
+  it('allows submission with these three fields left blank as long as required fields are filled', () => {
+    render(<Profile />)
+    fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Bachelor of Nursing' } })
+    fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+    fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
+    fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Registered Nurse' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).toHaveBeenCalled()
   })
 })

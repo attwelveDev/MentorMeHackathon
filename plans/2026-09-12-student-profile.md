@@ -578,6 +578,12 @@ task after Task 1 is independently testable via `npm test`.
 - **Acceptance criteria:** All three new tests pass; all Task 4/5 tests
   continue to pass.
 - **Depends on:** Task 2, Task 5.
+- **Status:** Done. Note: `'No preference'` is a shared option label between
+  `EMPLOYMENT_ARRANGEMENTS` and `WORK_LOCATION_MODES`, so the plan's test
+  query `getByRole('option', { name: opt.label })` throws (multiple matches)
+  for that one option — changed to `getAllByRole(...).length > 0` for that
+  assertion; it still verifies every option label from both lists renders,
+  just tolerates a label existing more than once.
 
 ### Task 7: Expand required fields to the final 6-field set (add `skills` and `experience`)
 
