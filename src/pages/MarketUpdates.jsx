@@ -1,11 +1,23 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 
 // Screen 6: State-by-state job market and migration trend updates.
 // This page renders curated, pre-sourced items (see src/data/marketSources.js)
 // and calls the AI only to summarise/label each one — it does not fetch
 // live news itself.
 export default function MarketUpdates() {
+  const { user } = useAuth()
   const [updates] = useState([])
+
+  if (!user) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12 text-center">
+        <p className="text-slate-600">Create an account to view job market &amp; migration updates.</p>
+        <Link to="/signup" className="mt-4 inline-block rounded-md bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700">Sign up</Link>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
