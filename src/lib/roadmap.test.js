@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getExpectedPeriodLabels, periodYearFor, computeRoadmap, computeStats } from './roadmap'
+import { getExpectedPeriodLabels, periodYearFor, computeRoadmap, computeStats, pickCurrentPeriod } from './roadmap'
 
 const studentProfile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4', targetOccupation: 'Data Analyst' }
 const gradProfile = { studyStage: 'recently-completed', graduationYear: '2023', targetOccupation: 'Data Analyst' }
@@ -75,6 +75,27 @@ describe('computeRoadmap', () => {
     ], gradProfile, 2026)
     expect(result[0].status).toBe('Completed')
     expect(result[0].colour).toBe('completed')
+  })
+})
+
+describe('pickCurrentPeriod', () => {
+  it('picks the first Year N period whose derived year is >= currentYear', () => {
+    const profile = { studyStage: 'midway', graduationYear: '2028', courseLengthYears: '4' }
+    // Year 1=2025, Year 2=2026, Year 3=2027, Year 4=2028
+    expect(pickCurrentPeriod(profile, 2026)).toEqual({ periodLabel: 'Year 2', periodYear: 2026 })
+  })
+
+  it('falls back to the last defined period when currentYear is past every period', () => {
+    const profile = { studyStage: 'midway', graduationYear: '2024', courseLengthYears: '2' }
+    // Year 1=2023, Year 2=2024
+    expect(pickCurrentPeriod(profile, 2026)).toEqual({ periodLabel: 'Year 2', periodYear: 2024 })
+  })
+
+  it('never returns "Before graduating" for a recently-completed profile', () => {
+    const profile = { studyStage: 'recently-completed', graduationYear: '2025' }
+    const result = pickCurrentPeriod(profile, 2026)
+    expect(result.periodLabel).not.toBe('Before graduating')
+    expect(result).toEqual({ periodLabel: 'Year 1 after graduating', periodYear: 2026 })
   })
 })
 

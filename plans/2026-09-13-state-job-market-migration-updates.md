@@ -215,7 +215,7 @@ for this plan.
 - **Review gate:** **Human review:** schema change (condition 1). Confirm both SQL files against the Supabase dashboard/CLI before accepting — check the unique constraint, RLS policies, and the check constraint values.
 - **Depends on:** None.
 
-### Task 2: `pickCurrentPeriod` in `src/lib/roadmap.js`
+### Task 2: `pickCurrentPeriod` in `src/lib/roadmap.js` [x]
 
 - **Description:** Add a helper that picks which existing plan period a newly-added "add to plan" activity should land in — the first period whose derived year is ≥ the current year, falling back to the last defined period if the student is already past their course length. Never returns `'Before graduating'` (a historical, not future, period).
 - **Files touched:** `src/lib/roadmap.js`, `src/lib/roadmap.test.js`.
@@ -229,7 +229,9 @@ for this plan.
 
   it('falls back to the last defined period when currentYear is past every period', () => {
     const profile = { studyStage: 'midway', graduationYear: '2024', courseLengthYears: '2' }
-    expect(pickCurrentPeriod(profile, 2026)).toEqual({ periodLabel: 'Year 2', periodYear: 2023 })
+    // Year 1=2023, Year 2=2024 (Phase 1 correction: the original fixture
+    // wrongly expected periodYear 2023 for periodLabel 'Year 2')
+    expect(pickCurrentPeriod(profile, 2026)).toEqual({ periodLabel: 'Year 2', periodYear: 2024 })
   })
 
   it('never returns "Before graduating" for a recently-completed profile', () => {

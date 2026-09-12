@@ -20,6 +20,14 @@ export function periodYearFor(periodLabel, profile) {
   return null
 }
 
+export function pickCurrentPeriod(profile, currentYear = new Date().getFullYear()) {
+  const withYears = getExpectedPeriodLabels(profile)
+    .map((label) => ({ label, year: periodYearFor(label, profile) }))
+    .filter((p) => p.year !== null)
+  const chosen = withYears.find((p) => p.year >= currentYear) ?? withYears[withYears.length - 1]
+  return { periodLabel: chosen.label, periodYear: chosen.year }
+}
+
 export function computeRoadmap(activities, profile, currentYear = new Date().getFullYear()) {
   const withYear = activities.map((a) => ({
     ...a,
