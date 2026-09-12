@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { EDUCATION_SECTORS, STUDY_STAGES, AU_STATES } from '../lib/profileOptions'
 
 // Screen 2: Student profile
-const REQUIRED_FIELDS = ['qualification', 'studyStage', 'targetOccupation']
+const REQUIRED_FIELDS = ['qualification', 'studyStage', 'targetOccupation', 'educationSector']
 
 export default function Profile() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     qualification: '',
     specialisation: '',
+    educationSector: '',
     studyStage: '',
     graduationYear: '',
     targetOccupation: '',
@@ -66,10 +68,21 @@ export default function Profile() {
           error={fieldErrors.specialisation}
         />
         <Field
+          id="educationSector"
+          label="Education sector *"
+          value={form.educationSector}
+          onChange={(v) => updateField('educationSector', v)}
+          type="select"
+          options={EDUCATION_SECTORS}
+          error={fieldErrors.educationSector}
+        />
+        <Field
           id="studyStage"
           label="Current study stage or apprenticeship stage *"
           value={form.studyStage}
           onChange={(v) => updateField('studyStage', v)}
+          type="select"
+          options={STUDY_STAGES}
           error={fieldErrors.studyStage}
         />
         <Field
@@ -91,6 +104,8 @@ export default function Profile() {
           label="Australian state or territory"
           value={form.state}
           onChange={(v) => updateField('state', v)}
+          type="select"
+          options={AU_STATES}
           error={fieldErrors.state}
         />
         <Field

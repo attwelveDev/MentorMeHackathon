@@ -518,6 +518,15 @@ task after Task 1 is independently testable via `npm test`.
   - `educationSector`, `studyStage`, and `state` render as `<select>`
     elements populated from `profileOptions.js`.
 - **Depends on:** Task 2, Task 4.
+- **Status:** Done. Note: Task 4's two original tests used the free-text
+  value `'Midway'` for `studyStage`, which is not a valid `STUDY_STAGES`
+  option value now that the field is a `<select>` — updated those two tests
+  to use `STUDY_STAGES[0].value` and to also fill `educationSector` (now
+  required), since `fireEvent.change` on a `<select>` with an unmatched
+  value doesn't select any option. Also changed the first test's assertion
+  from `getByText` to `getAllByText` for "This field is required." since two
+  required fields (qualification, educationSector) are now missing
+  simultaneously in that scenario.
 
 ### Task 6: Replace "preferred work setting" with employment arrangement, work location mode, and other preferences fields
 
