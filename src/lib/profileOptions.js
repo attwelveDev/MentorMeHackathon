@@ -1,3 +1,6 @@
+export const NO_QUALIFICATION_YET = 'No formal qualification yet'
+export const NO_SPECIALISATION = 'No specific major or specialisation'
+
 export const EDUCATION_SECTORS = [
   { value: 'higher-education', label: 'Higher education (university)' },
   { value: 'vet', label: 'Vocational education and training (VET)' },

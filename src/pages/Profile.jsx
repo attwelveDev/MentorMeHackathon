@@ -6,10 +6,12 @@ import {
   AU_STATES,
   EMPLOYMENT_ARRANGEMENTS,
   WORK_LOCATION_MODES,
+  NO_QUALIFICATION_YET,
+  NO_SPECIALISATION,
 } from '../lib/profileOptions'
 
 // Screen 2: Student profile
-const REQUIRED_FIELDS = ['qualification', 'studyStage', 'targetOccupation', 'educationSector']
+const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience']
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -67,14 +69,34 @@ export default function Profile() {
           value={form.qualification}
           onChange={(v) => updateField('qualification', v)}
           error={fieldErrors.qualification}
+          disabled={form.qualification === NO_QUALIFICATION_YET}
+          placeholder="e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry"
         />
+        <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={form.qualification === NO_QUALIFICATION_YET}
+            onChange={(e) => updateField('qualification', e.target.checked ? NO_QUALIFICATION_YET : '')}
+          />
+          I don't have a qualification yet
+        </label>
         <Field
           id="specialisation"
           label="Major, specialisation or trade"
           value={form.specialisation}
           onChange={(v) => updateField('specialisation', v)}
           error={fieldErrors.specialisation}
+          disabled={form.specialisation === NO_SPECIALISATION}
+          placeholder="e.g. Paediatric nursing, Cabinetmaking, Financial accounting"
         />
+        <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+          <input
+            type="checkbox"
+            checked={form.specialisation === NO_SPECIALISATION}
+            onChange={(e) => updateField('specialisation', e.target.checked ? NO_SPECIALISATION : '')}
+          />
+          I don't have a major, specialisation or trade yet
+        </label>
         <Field
           id="educationSector"
           label="Education sector *"
@@ -118,11 +140,12 @@ export default function Profile() {
         />
         <Field
           id="skills"
-          label="Current skills"
+          label="Current skills *"
           value={form.skills}
           onChange={(v) => updateField('skills', v)}
           type="textarea"
           error={fieldErrors.skills}
+          placeholder="e.g. Basic bookkeeping, MS Excel, customer service, First Aid certificate"
         />
         <Field
           id="certifications"
@@ -130,14 +153,16 @@ export default function Profile() {
           value={form.certifications}
           onChange={(v) => updateField('certifications', v)}
           error={fieldErrors.certifications}
+          placeholder="e.g. White Card, Responsible Service of Alcohol (RSA), First Aid Certificate"
         />
         <Field
           id="experience"
-          label="Employment or volunteer experience"
+          label="Employment or volunteer experience *"
           value={form.experience}
           onChange={(v) => updateField('experience', v)}
           type="textarea"
           error={fieldErrors.experience}
+          placeholder="e.g. Part-time retail assistant (6 months), unpaid childcare placement (3 weeks)"
         />
         <Field
           id="employmentArrangement"
@@ -163,6 +188,7 @@ export default function Profile() {
           value={form.otherPreferences}
           onChange={(v) => updateField('otherPreferences', v)}
           error={fieldErrors.otherPreferences}
+          placeholder="e.g. prefer a supportive team culture, interested in the not-for-profit sector"
         />
         <Field
           id="licences"
@@ -170,6 +196,7 @@ export default function Profile() {
           value={form.licences}
           onChange={(v) => updateField('licences', v)}
           error={fieldErrors.licences}
+          placeholder="e.g. Provisional driver's licence, Working with Children Check, White Card"
         />
         <button
           type="submit"
@@ -182,7 +209,7 @@ export default function Profile() {
   )
 }
 
-function Field({ id, label, value, onChange, type = 'text', options = [], error }) {
+function Field({ id, label, value, onChange, type = 'text', options = [], error, disabled = false, placeholder }) {
   const Component = type === 'textarea' ? 'textarea' : type === 'select' ? 'select' : 'input'
   return (
     <label htmlFor={id} className="block">
@@ -193,6 +220,8 @@ function Field({ id, label, value, onChange, type = 'text', options = [], error 
         maxLength={type === 'select' ? undefined : 500}
         onChange={(e) => onChange(e.target.value)}
         aria-describedby={error ? `${id}-error` : undefined}
+        disabled={disabled}
+        placeholder={type === 'select' ? undefined : placeholder}
         className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-1 ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'}`}
         {...(type === 'textarea' ? { rows: 3 } : {})}
       >

@@ -3,6 +3,13 @@
 - **Date:** 2026-09-12
 - **Status:** Approved
 - **Requirements confirmed by user:** yes — 2026-09-12
+- **Amendment (2026-09-12):** Task 7's Human review was rejected — the final
+  required-field set left `qualification` as a plain required text field
+  with no way for a student who has no qualification yet to satisfy it, and
+  the free-text fields had no guidance on what to enter. Requirements 2.1.9,
+  2.1.10 and 2.1.11 were added, confirmed by the user on 2026-09-12, and
+  Task 7 was redefined below (old Task 7 body replaced) with two new tasks
+  (8, 9) added. Tasks 1–6 are unaffected and already committed.
 
 ## 1. Summary
 
@@ -55,6 +62,23 @@ state, exactly as it is today.
 8. The Profile screen shall not call Supabase or any AI helper directly; the
    existing hand-off to `/analysis` (which itself calls
    `getCareerReadinessAnalysis` from `src/lib/ai.js`) is left untouched.
+9. The qualification field shall offer a checkbox labelled "I don't have a
+   qualification yet"; checking it disables the qualification text input and
+   sets `form.qualification` to the fixed sentinel value
+   `"No formal qualification yet"` (satisfying requirement 2.1.5's
+   required-field check for `qualification` without free text); unchecking it
+   clears `form.qualification` back to `''` and re-enables the input.
+10. The specialisation field shall offer an analogous checkbox labelled "I
+    don't have a major, specialisation or trade yet"; checking it sets
+    `form.specialisation` to the fixed sentinel value
+    `"No specific major or specialisation"` and disables the input;
+    unchecking it clears the field back to `''`. `specialisation` remains
+    optional either way (2.1.6's required set is unaffected).
+11. The 7 free-text fields — course/qualification, specialisation, current
+    skills, certifications, employment/volunteer experience, other work
+    preferences, and licences — shall each render a `placeholder` attribute
+    with a concrete example value (exact strings in Task 9 below), to prompt
+    students on what kind of answer is expected.
 
 ### 2.2 Non-functional requirements
 
@@ -585,11 +609,21 @@ task after Task 1 is independently testable via `npm test`.
   assertion; it still verifies every option label from both lists renders,
   just tolerates a label existing more than once.
 
-### Task 7: Expand required fields to the final 6-field set (add `skills` and `experience`)
+### Task 7: Expand required fields to the final 6-field set, with a "no qualification yet" escape hatch
 
+- **Redefined 2026-09-12** after the original Task 7's Human review was
+  rejected — the code below (required-field expansion) was already correct
+  and stays; this redefinition adds the qualification checkbox (2.1.9) that
+  the rejection asked for, folded into the same task since a student with no
+  qualification yet must be able to satisfy `qualification`'s required-field
+  check before this task's Human review can be re-presented.
 - **Description:** Enforce `skills` and `experience` as required, completing
-  the required set specified in §2.1.5.
-- **Files touched:** `src/pages/Profile.jsx` (edit), `src/pages/Profile.test.jsx` (edit — add tests).
+  the required set specified in §2.1.5, and add the "I don't have a
+  qualification yet" checkbox specified in §2.1.9 so a required
+  `qualification` field remains satisfiable by a student with none.
+- **Files touched:** `src/lib/profileOptions.js` (edit — add sentinel
+  constant), `src/pages/Profile.jsx` (edit), `src/pages/Profile.test.jsx`
+  (edit — add tests).
 - **Tests first (red):** Add to `src/pages/Profile.test.jsx`:
   ```jsx
   function fillRequiredExcept(omit) {
@@ -650,45 +684,215 @@ task after Task 1 is independently testable via `npm test`.
       })
     })
   })
+
+  describe('Profile qualification "none yet" checkbox', () => {
+    it('disables the qualification input and satisfies the required check when checked', () => {
+      render(<Profile />)
+      fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
+      expect(screen.getByLabelText(/course or qualification/i)).toBeDisabled()
+      expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('No formal qualification yet')
+    })
+
+    it('re-enables and clears the qualification input when unchecked', () => {
+      render(<Profile />)
+      const checkbox = screen.getByLabelText(/i don't have a qualification yet/i)
+      fireEvent.click(checkbox)
+      fireEvent.click(checkbox)
+      expect(screen.getByLabelText(/course or qualification/i)).not.toBeDisabled()
+      expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('')
+    })
+
+    it('allows submission using the "no qualification yet" sentinel in place of free text', () => {
+      render(<Profile />)
+      fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
+      fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+      fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
+      fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
+      fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
+      fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'None yet' } })
+      fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+      expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
+        state: { profile: expect.objectContaining({ qualification: 'No formal qualification yet' }) },
+      })
+    })
+  })
   ```
-- **Implementation (green):** In `src/pages/Profile.jsx`, update
-  `REQUIRED_FIELDS` to:
-  ```js
-  const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience']
-  ```
+- **Implementation (green):**
+  - In `src/lib/profileOptions.js`, add:
+    ```js
+    export const NO_QUALIFICATION_YET = 'No formal qualification yet'
+    ```
+  - In `src/pages/Profile.jsx`, update `REQUIRED_FIELDS` to:
+    ```js
+    const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience']
+    ```
+  - Import `NO_QUALIFICATION_YET` alongside the existing `profileOptions`
+    imports.
+  - Extend `Field`'s signature to accept `disabled` (passed through to
+    `Component`) and `placeholder` (passed through as the native
+    `placeholder` attribute, ignored for `type="select"`) — both default to
+    `undefined`/`false` so existing call sites are unaffected.
+  - Pass `disabled={form.qualification === NO_QUALIFICATION_YET}` to the
+    `qualification` `Field`.
+  - Directly below the `qualification` `Field`, add:
+    ```jsx
+    <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+      <input
+        type="checkbox"
+        checked={form.qualification === NO_QUALIFICATION_YET}
+        onChange={(e) => updateField('qualification', e.target.checked ? NO_QUALIFICATION_YET : '')}
+      />
+      I don't have a qualification yet
+    </label>
+    ```
 - **Refactor:** Remove the now-redundant `*` markers or reconcile field
   `label` text with which fields are actually required (i.e. update the
   `label` strings for `skills` and `experience` to end in `*`, matching the
   convention already used for the other 4 required fields' labels).
-- **Acceptance criteria:** All three new tests pass; the full Task 4–7 test
-  suite (`npm test`) passes together with no regressions.
+- **Acceptance criteria:** All six new tests (three required-set tests, three
+  checkbox tests) pass; the full Task 4–7 test suite (`npm test`) passes
+  together with no regressions.
 - **Human review:** Load `/profile` in the browser (`npm run dev`) and
   visually confirm the required-field asterisks match the 6 required fields,
-  and that the per-field error styling (red border + message) reads clearly
-  next to each field type (text, textarea, select) — layout/visual clarity
-  isn't fully provable by the DOM assertions above.
+  the per-field error styling (red border + message) reads clearly next to
+  each field type (text, textarea, select), and the "I don't have a
+  qualification yet" checkbox visibly disables the qualification input when
+  checked — layout/visual clarity isn't fully provable by the DOM assertions
+  above.
 - **Depends on:** Task 4, Task 5, Task 6.
+- **Status:** Done. Human review accepted by user on 2026-09-12 (after
+  redefinition).
+
+### Task 8: Add "no specialisation yet" checkbox for the specialisation field
+
+- **Description:** Add a checkbox analogous to Task 7's qualification
+  checkbox for the (optional) `specialisation` field, per §2.1.10, so the AI
+  analysis can distinguish "this student has no specialisation to report"
+  from "this student left the field blank."
+- **Files touched:** `src/lib/profileOptions.js` (edit), `src/pages/Profile.jsx` (edit), `src/pages/Profile.test.jsx` (edit — add tests).
+- **Tests first (red):** Add to `src/pages/Profile.test.jsx`:
+  ```jsx
+  describe('Profile specialisation "none yet" checkbox', () => {
+    it('disables the specialisation input and sets the sentinel value when checked', () => {
+      render(<Profile />)
+      fireEvent.click(screen.getByLabelText(/i don't have a major, specialisation or trade yet/i))
+      expect(screen.getByLabelText(/major, specialisation or trade/i)).toBeDisabled()
+      expect(screen.getByLabelText(/major, specialisation or trade/i)).toHaveValue('No specific major or specialisation')
+    })
+
+    it('re-enables and clears the specialisation input when unchecked', () => {
+      render(<Profile />)
+      const checkbox = screen.getByLabelText(/i don't have a major, specialisation or trade yet/i)
+      fireEvent.click(checkbox)
+      fireEvent.click(checkbox)
+      expect(screen.getByLabelText(/major, specialisation or trade/i)).not.toBeDisabled()
+      expect(screen.getByLabelText(/major, specialisation or trade/i)).toHaveValue('')
+    })
+
+    it('still allows submission when specialisation is left blank (unaffected by this checkbox)', () => {
+      fillRequiredExcept(null)
+      expect(mockNavigate).toHaveBeenCalled()
+    })
+  })
+  ```
+- **Implementation (green):**
+  - In `src/lib/profileOptions.js`, add:
+    ```js
+    export const NO_SPECIALISATION = 'No specific major or specialisation'
+    ```
+  - In `src/pages/Profile.jsx`, import `NO_SPECIALISATION` alongside
+    `NO_QUALIFICATION_YET`.
+  - Pass `disabled={form.specialisation === NO_SPECIALISATION}` to the
+    `specialisation` `Field`.
+  - Directly below the `specialisation` `Field`, add:
+    ```jsx
+    <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+      <input
+        type="checkbox"
+        checked={form.specialisation === NO_SPECIALISATION}
+        onChange={(e) => updateField('specialisation', e.target.checked ? NO_SPECIALISATION : '')}
+      />
+      I don't have a major, specialisation or trade yet
+    </label>
+    ```
+- **Refactor:** None expected.
+- **Acceptance criteria:** All three new tests pass; the full Task 4–8 test
+  suite (`npm test`) passes together with no regressions.
+- **Review gate:** No gate — green tests + acceptance criteria are
+  sufficient (additive UI on an existing optional field; no schema,
+  sourcing, auth, cross-cutting, or irreversible-action concern).
+- **Depends on:** Task 7.
+- **Status:** Done. Note: the plan's own test query
+  `getByLabelText(/major, specialisation or trade/i)` for the text field also
+  matches the new checkbox's label ("I don't have a major, specialisation or
+  trade yet") since both contain that substring — anchored the text-field
+  query to `/^major, specialisation or trade$/i` to disambiguate.
+
+### Task 9: Add example placeholder text to the 7 free-text fields
+
+- **Description:** Add a `placeholder` attribute with a concrete example to
+  each of the 7 free-text `Field`s, per §2.1.11, using `Field`'s `placeholder`
+  prop added in Task 7.
+- **Files touched:** `src/pages/Profile.jsx` (edit), `src/pages/Profile.test.jsx` (edit — add tests).
+- **Tests first (red):** Add to `src/pages/Profile.test.jsx`:
+  ```jsx
+  describe('Profile free-text field placeholders', () => {
+    it('renders the example placeholder text on each free-text field', () => {
+      render(<Profile />)
+      expect(screen.getByLabelText(/course or qualification/i)).toHaveAttribute(
+        'placeholder', 'e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry')
+      expect(screen.getByLabelText(/major, specialisation or trade/i)).toHaveAttribute(
+        'placeholder', 'e.g. Paediatric nursing, Cabinetmaking, Financial accounting')
+      expect(screen.getByLabelText(/current skills/i)).toHaveAttribute(
+        'placeholder', 'e.g. Basic bookkeeping, MS Excel, customer service, First Aid certificate')
+      expect(screen.getByLabelText(/certifications/i)).toHaveAttribute(
+        'placeholder', 'e.g. White Card, Responsible Service of Alcohol (RSA), First Aid Certificate')
+      expect(screen.getByLabelText(/employment or volunteer experience/i)).toHaveAttribute(
+        'placeholder', 'e.g. Part-time retail assistant (6 months), unpaid childcare placement (3 weeks)')
+      expect(screen.getByLabelText(/other work preferences/i)).toHaveAttribute(
+        'placeholder', 'e.g. prefer a supportive team culture, interested in the not-for-profit sector')
+      expect(screen.getByLabelText(/existing licences/i)).toHaveAttribute(
+        'placeholder', "e.g. Provisional driver's licence, Working with Children Check, White Card")
+    })
+  })
+  ```
+- **Implementation (green):** In `src/pages/Profile.jsx`, add a
+  `placeholder="..."` prop (the exact strings above) to each of the 7
+  `Field` call sites: `qualification`, `specialisation`, `skills`,
+  `certifications`, `experience`, `otherPreferences`, `licences`.
+- **Refactor:** None expected.
+- **Acceptance criteria:** The new test passes; the full test suite
+  (`npm test`) passes together with no regressions.
+- **Review gate:** No gate — green tests + acceptance criteria are
+  sufficient (copy-only change, no schema/sourcing/auth/cross-cutting/
+  irreversible concern).
+- **Depends on:** Task 7.
+- **Status:** Done.
 
 ## 6. Feature-level Definition of Done
 
-- [ ] Every task in §5 complete and its tests passing
-- [ ] `npm test` passes
+- [x] Every task in §5 complete and its tests passing
+- [x] `npm test` passes
 - [ ] `npm run lint` passes (SKIPPED: `eslint.config.js` is absent from the
   repo pre-existing this plan, so `npm run lint` fails before any code
   change; user directed skipping this item per Phase 1 review)
-- [ ] Manually verified: loaded `/` and `/profile` via `npm run dev` in a
+- [x] Manually verified: loaded `/` and `/profile` via `npm run dev` in a
   desktop-width browser window; read the Welcome screen's AI-notice and
   privacy-statement paragraphs; on Profile, submitted with a required field
   empty and confirmed the per-field + summary errors appear and no navigation
   occurs; filled all 6 required fields (leaving every optional field blank)
   and confirmed navigation to `/analysis` with the profile in state; direct
   navigation to `/analysis` with no router state still redirects to
-  `/profile` (pre-existing `Analysis.jsx` behaviour, unchanged).
-- [ ] Every requirement in §2 is covered — see §7
-- [ ] Every task with a `Human review:` line (Task 3, Task 7) has been shown
+  `/profile` (pre-existing `Analysis.jsx` behaviour, unchanged); checked the
+  "I don't have a qualification yet" and "I don't have a major,
+  specialisation or trade yet" checkboxes and confirmed each disables its
+  field and lets the form submit; confirmed placeholder example text is
+  visible in each of the 7 free-text fields when empty.
+- [x] Every requirement in §2 is covered — see §7
+- [x] Every task with a `Human review:` line (Task 3, Task 7) has been shown
   to the user and explicitly accepted — not inferred, not just its acceptance
   criteria passing
-- [ ] No item remains in §8
+- [x] No item remains in §8
 
 ## 7. Requirements coverage check
 
@@ -702,6 +906,9 @@ task after Task 1 is independently testable via `npm test`.
 | 2.1.6 | Task 4, Task 5, Task 7 |
 | 2.1.7 | Task 4, Task 7 |
 | 2.1.8 | Task 4 (verified by not touching `Analysis.jsx`/`ai.js`; see §2.2) |
+| 2.1.9 | Task 7 |
+| 2.1.10 | Task 8 |
+| 2.1.11 | Task 9 |
 | 2.2 (aria-describedby / role=alert) | Task 4 |
 | 2.2 (no new prod deps) | Task 1, Task 2 |
 | 2.2 (Analysis.jsx/ai.js untouched) | All tasks (no task lists these files as touched) |

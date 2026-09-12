@@ -37,6 +37,8 @@ describe('Profile validation', () => {
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Software Developer' } })
+    fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'JavaScript basics' } })
+    fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Internship, 3 months' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({
@@ -96,7 +98,143 @@ describe('Profile work-preference fields', () => {
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Registered Nurse' } })
+    fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Patient care basics' } })
+    fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Aged care volunteering' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
+  })
+})
+
+function fillRequiredExcept(omit) {
+  const values = {
+    qualification: 'Certificate III in Carpentry',
+    educationSector: EDUCATION_SECTORS[0].value,
+    studyStage: STUDY_STAGES[0].value,
+    targetOccupation: 'Carpenter',
+    skills: 'Basic hand and power tool use',
+    experience: 'Work placement, 2 weeks',
+  }
+  render(<Profile />)
+  const labelFor = {
+    qualification: /course or qualification/i,
+    educationSector: /education sector/i,
+    studyStage: /current study stage/i,
+    targetOccupation: /target occupation/i,
+    skills: /current skills/i,
+    experience: /employment or volunteer experience/i,
+  }
+  Object.entries(values).forEach(([key, val]) => {
+    if (key === omit) return
+    fireEvent.change(screen.getByLabelText(labelFor[key]), { target: { value: val } })
+  })
+  fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+}
+
+describe('Profile final required-field set', () => {
+  it('blocks submission when Current skills is empty', () => {
+    fillRequiredExcept('skills')
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('blocks submission when Experience is empty', () => {
+    fillRequiredExcept('experience')
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('navigates when all 6 required fields are filled and every optional field is left blank', () => {
+    fillRequiredExcept(null)
+    expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
+      state: { profile: expect.objectContaining({
+        qualification: 'Certificate III in Carpentry',
+        educationSector: EDUCATION_SECTORS[0].value,
+        studyStage: STUDY_STAGES[0].value,
+        targetOccupation: 'Carpenter',
+        skills: 'Basic hand and power tool use',
+        experience: 'Work placement, 2 weeks',
+        specialisation: '',
+        graduationYear: '',
+        state: '',
+        certifications: '',
+        employmentArrangement: '',
+        workLocationMode: '',
+        otherPreferences: '',
+        licences: '',
+      }) },
+    })
+  })
+})
+
+describe('Profile qualification "none yet" checkbox', () => {
+  it('disables the qualification input and satisfies the required check when checked', () => {
+    render(<Profile />)
+    fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
+    expect(screen.getByLabelText(/course or qualification/i)).toBeDisabled()
+    expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('No formal qualification yet')
+  })
+
+  it('re-enables and clears the qualification input when unchecked', () => {
+    render(<Profile />)
+    const checkbox = screen.getByLabelText(/i don't have a qualification yet/i)
+    fireEvent.click(checkbox)
+    fireEvent.click(checkbox)
+    expect(screen.getByLabelText(/course or qualification/i)).not.toBeDisabled()
+    expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('')
+  })
+
+  it('allows submission using the "no qualification yet" sentinel in place of free text', () => {
+    render(<Profile />)
+    fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
+    fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+    fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
+    fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
+    fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
+    fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'None yet' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
+      state: { profile: expect.objectContaining({ qualification: 'No formal qualification yet' }) },
+    })
+  })
+})
+
+describe('Profile specialisation "none yet" checkbox', () => {
+  it('disables the specialisation input and sets the sentinel value when checked', () => {
+    render(<Profile />)
+    fireEvent.click(screen.getByLabelText(/i don't have a major, specialisation or trade yet/i))
+    expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toBeDisabled()
+    expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveValue('No specific major or specialisation')
+  })
+
+  it('re-enables and clears the specialisation input when unchecked', () => {
+    render(<Profile />)
+    const checkbox = screen.getByLabelText(/i don't have a major, specialisation or trade yet/i)
+    fireEvent.click(checkbox)
+    fireEvent.click(checkbox)
+    expect(screen.getByLabelText(/^major, specialisation or trade$/i)).not.toBeDisabled()
+    expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveValue('')
+  })
+
+  it('still allows submission when specialisation is left blank (unaffected by this checkbox)', () => {
+    fillRequiredExcept(null)
+    expect(mockNavigate).toHaveBeenCalled()
+  })
+})
+
+describe('Profile free-text field placeholders', () => {
+  it('renders the example placeholder text on each free-text field', () => {
+    render(<Profile />)
+    expect(screen.getByLabelText(/course or qualification/i)).toHaveAttribute(
+      'placeholder', 'e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry')
+    expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveAttribute(
+      'placeholder', 'e.g. Paediatric nursing, Cabinetmaking, Financial accounting')
+    expect(screen.getByLabelText(/current skills/i)).toHaveAttribute(
+      'placeholder', 'e.g. Basic bookkeeping, MS Excel, customer service, First Aid certificate')
+    expect(screen.getByLabelText(/certifications/i)).toHaveAttribute(
+      'placeholder', 'e.g. White Card, Responsible Service of Alcohol (RSA), First Aid Certificate')
+    expect(screen.getByLabelText(/employment or volunteer experience/i)).toHaveAttribute(
+      'placeholder', 'e.g. Part-time retail assistant (6 months), unpaid childcare placement (3 weeks)')
+    expect(screen.getByLabelText(/other work preferences/i)).toHaveAttribute(
+      'placeholder', 'e.g. prefer a supportive team culture, interested in the not-for-profit sector')
+    expect(screen.getByLabelText(/existing licences/i)).toHaveAttribute(
+      'placeholder', "e.g. Provisional driver's licence, Working with Children Check, White Card")
   })
 })
