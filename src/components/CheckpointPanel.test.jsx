@@ -74,6 +74,14 @@ describe('CheckpointPanel', () => {
     expect(onClose).toHaveBeenCalled()
   })
 
+  it('caps the dialog height and scrolls internally, so a long diary entry list stays reachable', () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    renderPanel()
+    const dialog = screen.getByRole('dialog', { name: 'Apply for internships' })
+    expect(dialog.className).toMatch(/max-h-/)
+    expect(dialog.className).toMatch(/overflow-y-auto/)
+  })
+
   it('renders a locked "Create an account to keep a diary" prompt instead of the diary section for a signed-out guest', () => {
     mockUseAuth.mockReturnValue({ user: null })
     renderPanel()

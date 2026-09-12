@@ -82,7 +82,11 @@ export default function CheckpointPanel({ activity, onClose, onStatusChange, onR
   const { user } = useAuth()
 
   return (
-    <div role="dialog" aria-label={activity.title} className="diary-note -rotate-1 rounded-2xl border-2 border-amber-100 bg-white p-6">
+    <div
+      role="dialog"
+      aria-label={activity.title}
+      className="diary-note -rotate-1 max-h-[85vh] overflow-y-auto rounded-2xl border-2 border-amber-100 bg-white p-6"
+    >
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="font-diary-title text-2xl font-semibold text-slate-900">{activity.title}</p>
