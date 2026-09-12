@@ -503,7 +503,7 @@ for this plan.
 - **Review gate:** No gate — green tests + acceptance criteria are sufficient (CRUD only; the schema itself was already reviewed in Task 1).
 - **Depends on:** Task 1 (tables/columns must exist for this to work against real Supabase, though the mocked tests don't require it).
 
-### Task 6: Seed real, sourced items in `src/data/marketSources.js`
+### Task 6: Seed real, sourced items in `src/data/marketSources.js` [x]
 
 - **Description:** Populate the curated array with 6–9 real items across Registered Nurse (NSW), Carpenter (VIC), and Early Childhood Teacher (QLD), using the real government sources already located during brainstorming (jobsandskills.gov.au occupation-and-industry profiles; the ANMF 2026 Occupation Shortage List submission for a non-"Confirmed change" example). Each item's `sourceText`, `publishedDate`, and `retrievedDate` must be taken from the actual page content at the time of this task, via `WebFetch` on the real URL — not approximated from the earlier `WebSearch` summaries.
 - **Files touched:** `src/data/marketSources.js`.
@@ -526,6 +526,14 @@ for this plan.
   },
   ```
   If a source page's exact publication date cannot be determined, that item is not added (per CLAUDE.md: "If a claim cannot be backed by a real source, do not display it").
+  **Execution note:** the ANMF 2026 OSL Stakeholder Survey submission PDF
+  linked above 404'd at execution time (both via WebFetch and a direct
+  browser navigation); substituted with the reachable ANMJ article "ANMF
+  PRIORITIES 2026: Workforce reform" (29 Jan 2026) it's drawn from, used for
+  two items. Also added a Department of Education (Australian Government)
+  July 2026 ECEC announcement and a JSA Construction-industry profile item
+  for status/topic variety beyond the four URLs originally listed — 7 items
+  shipped, within the 6-9 target range, all human-reviewed and accepted.
 - **Refactor:** None expected.
 - **Acceptance criteria:**
   - Every item has a unique `id`, and `source`/`publishedDate`/`retrievedDate` traceable to a real, still-reachable URL.
