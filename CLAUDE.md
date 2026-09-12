@@ -43,7 +43,7 @@ education and VET students.
   shared logic goes in `src/lib/`. Routing via React Router (`src/App.jsx`).
 - **Backend/DB:** Supabase (Postgres, Auth, Storage — free tier). Client at
   `src/lib/supabaseClient.js`, configured via `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`.
-- **Generative AI:** Google Gemini (`gemini-2.0-flash`, free tier). The API key
+- **Generative AI:** Google Gemini (`gemini-3.6-flash`, free tier). The API key
   (`GEMINI_API_KEY`) is server-side only — never prefix it with `VITE_` or call the Gemini
   SDK from client code. All AI calls go through the `api/generate.js` serverless function;
   client code calls the typed helpers in `src/lib/ai.js`, not `fetch('/api/generate')`

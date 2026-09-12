@@ -6,7 +6,7 @@ Personalised, stage-by-stage career planning for international students and skil
 
 - **Frontend:** React + Vite + Tailwind CSS, deployed free on Vercel
 - **Backend/DB:** Supabase (Postgres, Auth, Storage — free tier)
-- **Generative AI:** Google Gemini (`gemini-2.0-flash`, free tier), called only from the
+- **Generative AI:** Google Gemini (`gemini-3.6-flash`, free tier), called only from the
   `api/generate.js` serverless function so the API key stays server-side
 - **Routing:** React Router
 
