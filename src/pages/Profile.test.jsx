@@ -41,6 +41,7 @@ describe('Profile validation', () => {
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'JavaScript basics' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Internship, 3 months' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
+    fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({
@@ -103,6 +104,7 @@ describe('Profile work-preference fields', () => {
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Patient care basics' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Aged care volunteering' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
+    fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
   })
@@ -117,6 +119,7 @@ function fillRequiredExcept(omit) {
     skills: 'Basic hand and power tool use',
     experience: 'Work placement, 2 weeks',
     workRights: 'no-restriction',
+    graduationYear: '2028',
   }
   render(<Profile />)
   const labelFor = {
@@ -127,6 +130,7 @@ function fillRequiredExcept(omit) {
     skills: /current skills/i,
     experience: /employment or volunteer experience/i,
     workRights: /work rights/i,
+    graduationYear: /expected graduation year/i,
   }
   Object.entries(values).forEach(([key, val]) => {
     if (key === omit) return
@@ -146,7 +150,7 @@ describe('Profile final required-field set', () => {
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
-  it('navigates when all 6 required fields are filled and every optional field is left blank', () => {
+  it('navigates when all required fields are filled and every optional field is left blank', () => {
     fillRequiredExcept(null)
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({
@@ -157,7 +161,7 @@ describe('Profile final required-field set', () => {
         skills: 'Basic hand and power tool use',
         experience: 'Work placement, 2 weeks',
         specialisation: '',
-        graduationYear: '',
+        graduationYear: '2028',
         state: '',
         certifications: '',
         employmentArrangement: '',
@@ -166,6 +170,11 @@ describe('Profile final required-field set', () => {
         licences: '',
       }) },
     })
+  })
+
+  it('blocks submission when Expected graduation year is empty', () => {
+    fillRequiredExcept('graduationYear')
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })
 
@@ -195,6 +204,7 @@ describe('Profile qualification "none yet" checkbox', () => {
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'None yet' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
+    fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ qualification: 'No formal qualification yet' }) },
@@ -261,6 +271,7 @@ describe('Profile work rights field', () => {
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Work placement' } })
     fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'prefer-not-to-say' } })
+    fireEvent.change(screen.getByLabelText(/expected graduation year/i), { target: { value: '2028' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ workRights: 'prefer-not-to-say' }) },

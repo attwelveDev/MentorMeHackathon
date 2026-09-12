@@ -12,7 +12,7 @@ import {
 } from '../lib/profileOptions'
 
 // Screen 2: Student profile
-const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience', 'workRights']
+const BASE_REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'graduationYear', 'targetOccupation', 'skills', 'experience', 'workRights']
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -42,7 +42,7 @@ export default function Profile() {
 
   function handleSubmit(event) {
     event.preventDefault()
-    const missing = REQUIRED_FIELDS.filter((field) => !form[field]?.trim())
+    const missing = BASE_REQUIRED_FIELDS.filter((field) => !form[field]?.trim())
     if (missing.length > 0) {
       const errors = Object.fromEntries(missing.map((f) => [f, 'This field is required.']))
       setFieldErrors(errors)
@@ -119,7 +119,7 @@ export default function Profile() {
         />
         <Field
           id="graduationYear"
-          label="Expected graduation year"
+          label="Expected graduation year *"
           value={form.graduationYear}
           onChange={(v) => updateField('graduationYear', v)}
           error={fieldErrors.graduationYear}
