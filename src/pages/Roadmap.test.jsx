@@ -426,6 +426,30 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     expect(await screen.findByText('Great progress!')).toBeInTheDocument()
   })
 
+  it('shows the 3 most recent diary entries in the stats strip for a signed-in user with entries', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    getDiaryEntries.mockResolvedValue([
+      { id: 'd1', entry_text: 'Applied today', activity: { title: 'Apply for internships' } },
+    ])
+    renderRoadmap()
+    await waitFor(() => expect(screen.getByText('Applied today')).toBeInTheDocument())
+  })
+
+  it('still shows the "No diary entries yet" stub for a signed-out guest', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    expect(await screen.findByText(/no diary entries yet/i)).toBeInTheDocument()
+  })
+
   it('does not render a Save button for a signed-in user who already has a persisted plan', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     mockUseLocation.mockReturnValue({ state: undefined })

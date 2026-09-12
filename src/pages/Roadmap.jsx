@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth'
 import { generateCareerPlan, getDiaryFeedback } from '../lib/ai'
 import {
   getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity,
-  getDiaryEntriesForActivity, createDiaryEntry, setDiaryEntryFeedback,
+  getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
 } from '../lib/db'
 import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
@@ -57,6 +57,7 @@ export default function Roadmap() {
   const [error, setError] = useState(null)
   const [openKey, setOpenKey] = useState(null)
   const [diaryEntries, setDiaryEntries] = useState([])
+  const [recentDiaryEntries, setRecentDiaryEntries] = useState([])
   const [saveNotice, setSaveNotice] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [accepted, setAccepted] = useState(false)
@@ -147,6 +148,18 @@ export default function Roadmap() {
     }
     return () => { cancelled = true }
   }, [user, openKey, activities])
+
+  useEffect(() => {
+    let cancelled = false
+    if (user) {
+      getDiaryEntries(user.id, { limit: 3 }).then((entries) => {
+        if (!cancelled) setRecentDiaryEntries(entries)
+      })
+    } else {
+      setRecentDiaryEntries([])
+    }
+    return () => { cancelled = true }
+  }, [user])
 
   if (loading) return <Centered>Building your plan…</Centered>
   if (error) return <Centered className="text-red-700">{error}</Centered>
@@ -333,7 +346,18 @@ export default function Roadmap() {
             </div>
             <div className="mt-6">
               <h3 className="font-diary-title text-lg text-slate-700">Recent diary entries</h3>
-              <p className="font-diary-body mt-2 text-sm text-slate-500">No diary entries yet</p>
+              {user && recentDiaryEntries.length > 0 ? (
+                <ul className="font-diary-body mt-2 space-y-2 text-sm text-slate-600">
+                  {recentDiaryEntries.map((entry) => (
+                    <li key={entry.id}>
+                      <span className="font-medium text-slate-800">{entry.activity?.title}: </span>
+                      {entry.entry_text}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="font-diary-body mt-2 text-sm text-slate-500">No diary entries yet</p>
+              )}
             </div>
           </section>
         </div>
