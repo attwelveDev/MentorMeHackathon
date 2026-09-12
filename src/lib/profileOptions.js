@@ -41,6 +41,7 @@ export const WORK_LOCATION_MODES = [
 ]
 
 export const WORK_RIGHTS = [
+  { value: 'citizen-or-pr', label: 'Australian citizen or permanent resident' },
   { value: 'no-restriction', label: 'No restriction on hours' },
   { value: 'limited-during-study', label: 'Limited hours during study periods' },
   { value: 'not-currently-able', label: 'Not currently able to work' },

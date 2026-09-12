@@ -47,8 +47,9 @@ describe('profileOptions', () => {
       { value: 'no-preference', label: 'No preference' },
     ])
   })
-  it('exports 5 work rights options', () => {
+  it('exports 6 work rights options, with citizen/PR listed first', () => {
     expect(WORK_RIGHTS).toEqual([
+      { value: 'citizen-or-pr', label: 'Australian citizen or permanent resident' },
       { value: 'no-restriction', label: 'No restriction on hours' },
       { value: 'limited-during-study', label: 'Limited hours during study periods' },
       { value: 'not-currently-able', label: 'Not currently able to work' },
