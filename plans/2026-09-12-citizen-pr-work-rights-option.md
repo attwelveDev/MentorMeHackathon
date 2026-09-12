@@ -231,7 +231,7 @@ reason.
   was gated for.
 - **Depends on:** None.
 
-### Task 2: Instruct the AI analysis prompt not to address visa/migration specifics
+### Task 2: Instruct the AI analysis prompt not to address visa/migration specifics [x]
 
 - **Description:** Add an explicit instruction to `getCareerReadinessAnalysis`'s
   prompt so the model does not treat visa subclass, sponsorship pathway, or
@@ -313,22 +313,22 @@ reason.
 ## 6. Feature-level Definition of Done
 
 - [x] Task 1 complete and its tests passing
-- [ ] Task 2 complete and its tests passing
-- [ ] `npm test` passes (full suite)
+- [x] Task 2 complete and its tests passing
+- [x] `npm test` passes (full suite)
 - [ ] `npm run lint` — same pre-existing gap as
   `plans/2026-09-12-student-profile.md` and
   `plans/2026-09-12-work-rights-field.md` (no `eslint.config.js` in the
   repo); skip per that precedent unless the user says otherwise.
-- [ ] Manually verified: loaded `/profile` via `npm run dev`; confirmed
+- [x] Manually verified: loaded `/profile` via `npm run dev`; confirmed
   "Australian citizen or permanent resident" is the first Work rights option;
   selected it plus the other 6 required fields and confirmed navigation to
   `/analysis` with `workRights: 'citizen-or-pr'` in the profile state.
-- [ ] Every requirement in §2 is covered — see §7
+- [x] Every requirement in §2 is covered — see §7
 - [x] Task 1's `Human review:` has been shown to the user and explicitly
   accepted
-- [ ] Task 2's `Human review:` has been shown to the user and explicitly
+- [x] Task 2's `Human review:` has been shown to the user and explicitly
   accepted
-- [ ] No item remains in §8
+- [x] No item remains in §8
 
 ## 7. Requirements coverage check
 
