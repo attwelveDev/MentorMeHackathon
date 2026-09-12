@@ -226,6 +226,8 @@ describe('Profile free-text field placeholders', () => {
       'placeholder', 'e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry')
     expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveAttribute(
       'placeholder', 'e.g. Paediatric nursing, Cabinetmaking, Financial accounting')
+    expect(screen.getByLabelText(/target occupation/i)).toHaveAttribute(
+      'placeholder', 'e.g. Registered Nurse, Cabinetmaker, Financial Accountant, Early Childhood Educator')
     expect(screen.getByLabelText(/current skills/i)).toHaveAttribute(
       'placeholder', 'e.g. Basic bookkeeping, MS Excel, customer service, First Aid certificate')
     expect(screen.getByLabelText(/certifications/i)).toHaveAttribute(

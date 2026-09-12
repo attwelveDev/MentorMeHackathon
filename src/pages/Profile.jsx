@@ -128,6 +128,7 @@ export default function Profile() {
           value={form.targetOccupation}
           onChange={(v) => updateField('targetOccupation', v)}
           error={fieldErrors.targetOccupation}
+          placeholder="e.g. Registered Nurse, Cabinetmaker, Financial Accountant, Early Childhood Educator"
         />
         <Field
           id="state"

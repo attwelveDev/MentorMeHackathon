@@ -867,7 +867,12 @@ task after Task 1 is independently testable via `npm test`.
   sufficient (copy-only change, no schema/sourcing/auth/cross-cutting/
   irreversible concern).
 - **Depends on:** Task 7.
-- **Status:** Done.
+- **Status:** Done. Post-completion addendum (2026-09-12): the user noticed
+  `targetOccupation` is also a free-text field but was missed from this
+  task's list — added a placeholder
+  ("e.g. Registered Nurse, Cabinetmaker, Financial Accountant, Early
+  Childhood Educator") to it as well, with a test, following the same
+  pattern.
 
 ## 6. Feature-level Definition of Done
 
