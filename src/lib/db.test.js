@@ -2,7 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
 vi.mock('./supabaseClient', () => ({ supabase: { from: (...args) => mockFrom(...args) } }))
-import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity, getProfile, saveProfile } from './db'
+import {
+  getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity, getProfile, saveProfile,
+  getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
+} from './db'
 
 beforeEach(() => { mockFrom.mockReset() })
 
@@ -105,5 +108,34 @@ describe('getProfile / saveProfile', () => {
   it('saveProfile throws with the underlying error message on failure', async () => {
     mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
     await expect(saveProfile('u1', {})).rejects.toThrow('boom')
+  })
+})
+
+describe('diary entry helpers', () => {
+  it('getDiaryEntriesForActivity returns entries ordered most-recent-first', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: [{ id: 'd2' }, { id: 'd1' }], error: null }))
+    expect(await getDiaryEntriesForActivity('a1')).toEqual([{ id: 'd2' }, { id: 'd1' }])
+  })
+
+  it('getDiaryEntries joins the activity title and respects an optional limit', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: [{ id: 'd1', activity: { title: 'Apply for internships' } }], error: null }))
+    const result = await getDiaryEntries('u1', { limit: 3 })
+    expect(result).toEqual([{ id: 'd1', activity: { title: 'Apply for internships' } }])
+  })
+
+  it('createDiaryEntry inserts and returns the new row', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: { id: 'd3', entry_text: 'text' }, error: null }))
+    const result = await createDiaryEntry('a1', 'u1', 'text')
+    expect(result).toEqual({ id: 'd3', entry_text: 'text' })
+  })
+
+  it('setDiaryEntryFeedback resolves without throwing on success', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await expect(setDiaryEntryFeedback('d1', 'feedback text')).resolves.toBeUndefined()
+  })
+
+  it("throws with the underlying message when createDiaryEntry's insert errors", async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: null, error: { message: 'boom' } }))
+    await expect(createDiaryEntry('a1', 'u1', 'text')).rejects.toThrow('boom')
   })
 })

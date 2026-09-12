@@ -78,3 +78,36 @@ export async function saveProfile(userId, profile) {
   const { error } = await supabase.from('profiles').upsert(row)
   if (error) throw new Error(error.message)
 }
+
+export async function getDiaryEntriesForActivity(activityId) {
+  const { data, error } = await supabase
+    .from('diary_entries').select('*').eq('activity_id', activityId)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function getDiaryEntries(userId, { limit } = {}) {
+  let query = supabase
+    .from('diary_entries').select('*, activity:activities(title)')
+    .eq('user_id', userId).order('created_at', { ascending: false })
+  if (limit) query = query.limit(limit)
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return data ?? []
+}
+
+export async function createDiaryEntry(activityId, userId, entryText) {
+  const { data, error } = await supabase
+    .from('diary_entries')
+    .insert({ activity_id: activityId, user_id: userId, entry_text: entryText })
+    .select().single()
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function setDiaryEntryFeedback(entryId, feedback) {
+  const { error } = await supabase
+    .from('diary_entries').update({ ai_feedback: feedback }).eq('id', entryId)
+  if (error) throw new Error(error.message)
+}
