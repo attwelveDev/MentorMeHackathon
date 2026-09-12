@@ -614,6 +614,11 @@ task's scope affected.
 
 ### Task 5: `src/pages/Roadmap.jsx` — screen shell, generation/loading, open-book rendering
 
+**Status: Done — human review accepted by user, 2026-09-12** (visually
+verified via `vercel dev` against a real Gemini-generated plan: correct
+Year-N grouping, grey/gold/blue colour-coding, single pin, goal card, stats
+strip).
+
 - **Description:** The new Screen 4+5 component: loads an existing
   registered-user plan or generates a new one (guest or registered), renders
   the open-book roadmap using Task 1's derived colours/pin plus the goal
