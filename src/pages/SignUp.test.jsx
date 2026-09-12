@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 const mockNavigate = vi.fn()
 vi.mock('react-router-dom', async (importOriginal) => {
@@ -18,29 +19,29 @@ beforeEach(() => {
 describe('SignUp', () => {
   it('navigates to / when signUp returns an active session', async () => {
     mockSignUp.mockResolvedValue({ data: { session: { user: { id: 'u1' } } }, error: null })
-    render(<SignUp />)
+    render(<MemoryRouter><SignUp /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'a@b.com' } })
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret123' } })
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/'))
   })
 
   it('shows a confirm-your-email message and does not navigate when no session is returned', async () => {
     mockSignUp.mockResolvedValue({ data: { session: null }, error: null })
-    render(<SignUp />)
+    render(<MemoryRouter><SignUp /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'a@b.com' } })
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret123' } })
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
     await waitFor(() => expect(screen.getByText(/check your email/i)).toBeInTheDocument())
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
   it('shows the error message and does not navigate when signUp fails', async () => {
     mockSignUp.mockResolvedValue({ data: { session: null }, error: { message: 'User already registered' } })
-    render(<SignUp />)
+    render(<MemoryRouter><SignUp /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'a@b.com' } })
     fireEvent.change(screen.getByLabelText(/password/i), { target: { value: 'secret123' } })
-    fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }))
     await waitFor(() => expect(screen.getByText(/user already registered/i)).toBeInTheDocument())
     expect(mockNavigate).not.toHaveBeenCalled()
   })

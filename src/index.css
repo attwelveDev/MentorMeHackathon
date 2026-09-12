@@ -45,3 +45,60 @@
 .diary-tab {
   box-shadow: 2px 2px 4px rgba(90, 74, 40, 0.2);
 }
+
+@media (prefers-color-scheme: dark) {
+  .diary-paper {
+    background-color: #1c2436;
+    background-image:
+      repeating-linear-gradient(rgba(255, 255, 255, 0.03) 0px, rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 28px),
+      radial-gradient(ellipse at top left, rgba(255, 255, 255, 0.04), transparent 60%);
+  }
+
+  .diary-note {
+    background-color: #232d45;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(0, 0, 0, 0.2);
+  }
+
+  .diary-note::before {
+    background: rgba(250, 204, 21, 0.35);
+  }
+}
+
+/* Book cover spine that the tab strip appears bound to, per the notebook mockup. */
+.book-spine {
+  background: linear-gradient(180deg, #4a5a80, #35415e);
+  box-shadow: inset -2px 0 3px rgba(255, 255, 255, 0.15), inset 2px 0 4px rgba(0, 0, 0, 0.25);
+}
+
+.book-spine__rivet {
+  background: radial-gradient(circle at 35% 35%, #c9d3e8, #6b7aa0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Hand-torn sticky note, used for margin notes outside the page spread. */
+.sticky-note {
+  background: #fff3b0;
+  box-shadow: 0 3px 6px rgba(90, 74, 40, 0.2);
+}
+
+@media (prefers-color-scheme: dark) {
+  .sticky-note {
+    background: #7a6a2e;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.diary-field {
+  background-color: rgba(250, 245, 236, 0.6);
+  transition: border-color 0.15s ease;
+}
+
+.diary-field:focus-within {
+  border-color: #7dd3fc;
+}
+
+@media (prefers-color-scheme: dark) {
+  .diary-field {
+    background-color: rgba(255, 255, 255, 0.04);
+  }
+}
