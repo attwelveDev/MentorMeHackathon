@@ -12,18 +12,25 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useLocation: () => mockUseLocation() }
 })
 
-vi.mock('../lib/ai', () => ({ generateCareerPlan: vi.fn() }))
+vi.mock('../lib/ai', () => ({ generateCareerPlan: vi.fn(), getDiaryFeedback: vi.fn() }))
 vi.mock('../lib/db', () => ({
   getPlanWithActivities: vi.fn(),
   createPlanWithActivities: vi.fn(),
   updateActivityStatus: vi.fn(),
   setPlanAccepted: vi.fn(),
   deleteActivity: vi.fn(),
+  getDiaryEntriesForActivity: vi.fn(),
+  getDiaryEntries: vi.fn(),
+  createDiaryEntry: vi.fn(),
+  setDiaryEntryFeedback: vi.fn(),
 }))
 vi.mock('../lib/localPlan', () => ({ saveGuestPlan: vi.fn(), loadGuestPlan: vi.fn() }))
 
-import { generateCareerPlan } from '../lib/ai'
-import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
+import { generateCareerPlan, getDiaryFeedback } from '../lib/ai'
+import {
+  getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity,
+  getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
+} from '../lib/db'
 import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import Roadmap from './Roadmap'
 
@@ -58,6 +65,11 @@ beforeEach(() => {
   deleteActivity.mockReset().mockResolvedValue(undefined)
   saveGuestPlan.mockReset().mockReturnValue({ ok: true })
   loadGuestPlan.mockReset().mockReturnValue(null)
+  getDiaryEntriesForActivity.mockReset().mockResolvedValue([])
+  getDiaryEntries.mockReset().mockResolvedValue([])
+  createDiaryEntry.mockReset()
+  setDiaryEntryFeedback.mockReset().mockResolvedValue(undefined)
+  getDiaryFeedback.mockReset()
 })
 
 describe('Roadmap — guest, fresh generation', () => {
@@ -351,6 +363,67 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Completed' } })
     await waitFor(() => expect(updateActivityStatus).toHaveBeenCalledWith('a4', 'Completed'))
+  })
+
+  it('opening the panel for a signed-in user calls getDiaryEntriesForActivity(activity.id) and passes the result to CheckpointPanel', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    getDiaryEntriesForActivity.mockResolvedValue([{ id: 'd1', entry_text: 'Existing entry', created_at: '2026-09-01T00:00:00Z' }])
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    await waitFor(() => expect(getDiaryEntriesForActivity).toHaveBeenCalledWith('a4'))
+    expect(await screen.findByText('Existing entry')).toBeInTheDocument()
+  })
+
+  it('submitting a diary entry calls createDiaryEntry(activity.id, user.id, text) and the new entry appears in the panel', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    getDiaryEntriesForActivity.mockResolvedValue([])
+    createDiaryEntry.mockResolvedValue({ id: 'd1', entry_text: 'New entry text', created_at: '2026-09-13T00:00:00Z' })
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    await waitFor(() => expect(getDiaryEntriesForActivity).toHaveBeenCalled())
+    fireEvent.change(screen.getByRole('textbox', { name: /diary entry/i }), { target: { value: 'New entry text' } })
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }))
+    await waitFor(() => expect(createDiaryEntry).toHaveBeenCalledWith('a4', 'u1', 'New entry text'))
+    expect(await screen.findByText('New entry text')).toBeInTheDocument()
+  })
+
+  it('requesting AI feedback calls getDiaryFeedback(activity, entryText) then setDiaryEntryFeedback(entry.id, feedback) and the feedback appears under the entry', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    const dbActivities = rawActivities.map((a, i) => ({
+      id: `a${i}`, title: a.title, category: a.category, period_label: a.period,
+      period_year: periodYearFor(a.period, studentProfile), priority: a.priority,
+      explanation: a.explanation, status: a.status,
+    }))
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: dbActivities })
+    getDiaryEntriesForActivity.mockResolvedValue([{ id: 'd1', entry_text: 'Existing entry', created_at: '2026-09-01T00:00:00Z' }])
+    getDiaryFeedback.mockResolvedValue('Great progress!')
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    fireEvent.click(screen.getByTestId('checkpoint-Apply for internships'))
+    expect(await screen.findByText('Existing entry')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
+    await waitFor(() => expect(getDiaryFeedback).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'Apply for internships' }), 'Existing entry'
+    ))
+    await waitFor(() => expect(setDiaryEntryFeedback).toHaveBeenCalledWith('d1', 'Great progress!'))
+    expect(await screen.findByText('Great progress!')).toBeInTheDocument()
   })
 
   it('does not render a Save button for a signed-in user who already has a persisted plan', async () => {

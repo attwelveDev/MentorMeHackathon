@@ -1,9 +1,67 @@
+import { useState } from 'react'
 import { useAuth } from '../lib/auth'
 import LockedAction from './LockedAction'
 
 const STATUS_OPTIONS = ['Not started', 'In progress', 'Completed']
 
-export default function CheckpointPanel({ activity, onClose, onStatusChange, onRemove }) {
+function formatTimestamp(isoString) {
+  return new Date(isoString).toLocaleString()
+}
+
+function DiarySection({ diaryEntries = [], onAddEntry, onRequestFeedback }) {
+  const [text, setText] = useState('')
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!text.trim()) return
+    onAddEntry(text)
+    setText('')
+  }
+
+  return (
+    <div className="mt-4">
+      <p className="font-diary-title text-base font-medium text-slate-700">Diary</p>
+      <ul className="font-diary-body mt-2 space-y-3">
+        {diaryEntries.map((entry) => (
+          <li key={entry.id} className="rounded-md border border-slate-200 p-3 text-sm">
+            <p className="text-slate-800">{entry.entry_text}</p>
+            <p className="mt-1 text-xs text-slate-500">{formatTimestamp(entry.created_at)}</p>
+            {entry.ai_feedback ? (
+              <p className="mt-2 rounded-md bg-indigo-50 p-2 text-sm text-indigo-800">{entry.ai_feedback}</p>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onRequestFeedback(entry.id)}
+                className="mt-2 text-sm text-indigo-700 hover:underline"
+              >
+                Get AI feedback
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
+      <form onSubmit={handleSubmit} className="mt-3">
+        <label htmlFor="diary-entry-text" className="sr-only">Diary entry</label>
+        <textarea
+          id="diary-entry-text"
+          aria-label="Diary entry"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="w-full rounded-md border border-slate-300 p-2 text-sm"
+          rows={3}
+        />
+        <button
+          type="submit"
+          className="font-diary-title mt-2 rounded-lg border-2 border-slate-300 bg-white px-4 py-1 text-sm text-slate-700 shadow-sm hover:bg-slate-50"
+        >
+          Add entry
+        </button>
+      </form>
+    </div>
+  )
+}
+
+export default function CheckpointPanel({ activity, onClose, onStatusChange, onRemove, diaryEntries, onAddEntry, onRequestFeedback }) {
   const { user } = useAuth()
 
   return (
@@ -49,6 +107,15 @@ export default function CheckpointPanel({ activity, onClose, onStatusChange, onR
           Remove
         </LockedAction>
       </div>
+
+      {user ? (
+        <DiarySection diaryEntries={diaryEntries} onAddEntry={onAddEntry} onRequestFeedback={onRequestFeedback} />
+      ) : (
+        <div className="mt-4">
+          <p className="font-diary-title text-base font-medium text-slate-700">Diary</p>
+          <p className="font-diary-body mt-1 text-sm text-slate-500">Create an account to keep a diary</p>
+        </div>
+      )}
     </div>
   )
 }

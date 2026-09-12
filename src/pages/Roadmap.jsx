@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { generateCareerPlan } from '../lib/ai'
-import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
+import { generateCareerPlan, getDiaryFeedback } from '../lib/ai'
+import {
+  getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity,
+  getDiaryEntriesForActivity, createDiaryEntry, setDiaryEntryFeedback,
+} from '../lib/db'
 import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
 import LockedAction from '../components/LockedAction'
@@ -53,6 +56,7 @@ export default function Roadmap() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [openKey, setOpenKey] = useState(null)
+  const [diaryEntries, setDiaryEntries] = useState([])
   const [saveNotice, setSaveNotice] = useState(null)
   const [saveError, setSaveError] = useState(null)
   const [accepted, setAccepted] = useState(false)
@@ -127,6 +131,23 @@ export default function Roadmap() {
     }
   }, [user, profile, activities])
 
+  useEffect(() => {
+    let cancelled = false
+    if (user && openKey != null) {
+      const activity = (activities ?? []).find((a) => keyOf(a) === openKey)
+      if (activity?.id) {
+        getDiaryEntriesForActivity(activity.id).then((entries) => {
+          if (!cancelled) setDiaryEntries(entries)
+        })
+      } else {
+        setDiaryEntries([])
+      }
+    } else {
+      setDiaryEntries([])
+    }
+    return () => { cancelled = true }
+  }, [user, openKey, activities])
+
   if (loading) return <Centered>Building your plan…</Centered>
   if (error) return <Centered className="text-red-700">{error}</Centered>
   if (!activities) return null
@@ -174,6 +195,20 @@ export default function Roadmap() {
     } else {
       setSaveError(result.error)
     }
+  }
+
+  async function handleAddEntry(text) {
+    if (!openActivity?.id) return
+    const entry = await createDiaryEntry(openActivity.id, user.id, text)
+    setDiaryEntries((prev) => [entry, ...prev])
+  }
+
+  async function handleRequestFeedback(entryId) {
+    const entry = diaryEntries.find((e) => e.id === entryId)
+    if (!entry || !openActivity) return
+    const feedback = await getDiaryFeedback(openActivity, entry.entry_text)
+    await setDiaryEntryFeedback(entryId, feedback)
+    setDiaryEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, ai_feedback: feedback } : e)))
   }
 
   async function handleAccept() {
@@ -315,6 +350,9 @@ export default function Roadmap() {
               onClose={() => setOpenKey(null)}
               onStatusChange={(newStatus) => handleStatusChange(openActivity, newStatus)}
               onRemove={() => handleRemove(openActivity)}
+              diaryEntries={diaryEntries}
+              onAddEntry={handleAddEntry}
+              onRequestFeedback={handleRequestFeedback}
             />
           </div>
         </div>
