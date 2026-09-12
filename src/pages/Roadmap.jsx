@@ -377,7 +377,7 @@ export default function Roadmap() {
         >
           <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             {user && diaryEntriesLoading ? (
-              <div className="diary-note rounded-2xl border-2 border-amber-100 bg-white p-6 text-center">
+              <div className="diary-note diary-note--no-tape rounded-2xl border-2 border-amber-100 bg-white p-6 text-center">
                 <p className="font-diary-title text-lg text-slate-600">Loading…</p>
               </div>
             ) : (
