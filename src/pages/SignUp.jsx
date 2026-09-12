@@ -46,29 +46,24 @@ export default function SignUp() {
       <div className="mx-auto flex max-w-5xl gap-0 px-4">
         <div className="relative flex min-w-0 flex-1">
           {/* Cover: sits behind the tabs and both pages, and peeks out past their edges. */}
-          <div className="book-cover absolute -top-4 -bottom-4 left-3.5 -right-4 hidden rounded-2xl sm:block" />
-          {/* Spine: the binding edge, protruding further than the cover above and below. */}
-          <div className="book-spine absolute -top-8 -bottom-8 left-0 hidden w-3.5 rounded-full sm:block">
-            <span className="book-spine__rivet absolute left-1/2 top-3 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
-            <span className="book-spine__rivet absolute bottom-3 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
-          </div>
+          <div className="book-cover absolute -top-4 -bottom-4 left-0 -right-4 hidden rounded-2xl sm:block" />
 
-          <nav aria-label="Book tabs" className="relative hidden w-32 shrink-0 pt-10 pl-7 sm:block">
-            <div className="diary-note mb-4 rounded-r-xl px-3 py-3">
-              <p className="font-diary-title flex items-baseline gap-1 text-2xl text-slate-800 dark:text-slate-100">
-                Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
-              </p>
-              <p className="font-diary-body mt-1 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
-                Small steps<br />bigger<br />tomorrows
-              </p>
-            </div>
+          <nav aria-label="Book tabs" className="relative hidden w-32 shrink-0 pt-10 sm:block">
+            {/* The tab-holder page: same plane as the Planery text, sitting behind the tabs. */}
+            <div className="diary-note diary-note--no-tape absolute inset-0 rounded-l-2xl" />
+            <p className="font-diary-title relative flex items-baseline gap-1 px-3 text-2xl text-slate-800 dark:text-slate-100">
+              Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
+            </p>
+            <p className="font-diary-body relative mb-4 mt-1 px-3 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
+              Small steps<br />bigger<br />tomorrows
+            </p>
             {TABS.map(({ to, label, bg }, i) =>
               to ? (
                 <Link
                   key={label}
                   to={to}
                   style={{ backgroundColor: bg, marginLeft: `${i * 4}px` }}
-                  className="diary-tab font-diary-title mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
+                  className="diary-tab font-diary-title relative mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
                 >
                   {label}
                 </Link>
@@ -77,7 +72,7 @@ export default function SignUp() {
                   key={label}
                   title="Coming soon"
                   style={{ backgroundColor: bg, marginLeft: `${i * 4}px` }}
-                  className="diary-tab font-diary-title mb-3 block cursor-default rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 opacity-60"
+                  className="diary-tab font-diary-title relative mb-3 block cursor-default rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 opacity-60"
                 >
                   {label}
                 </span>
@@ -86,7 +81,12 @@ export default function SignUp() {
           </nav>
 
           <div className="relative flex min-w-0 flex-1 flex-col sm:flex-row">
-          <div className="diary-note w-full shrink-0 rounded-t-2xl p-6 sm:w-2/5 sm:rounded-l-none sm:rounded-tr-none sm:p-8">
+          {/* Spine: the binding edge, aligned with the seam between the two pages, protruding above and below them. */}
+          <div className="book-spine absolute -top-4 -bottom-4 left-0 hidden w-6 -translate-x-1/2 rounded-full sm:left-[40%] sm:block">
+            <span className="book-spine__rivet absolute left-1/2 top-3 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
+            <span className="book-spine__rivet absolute bottom-3 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full" />
+          </div>
+          <div className="diary-note diary-note--no-tape w-full shrink-0 rounded-t-2xl p-6 sm:w-2/5 sm:rounded-bl-2xl sm:rounded-tr-none sm:p-8">
             <div className="relative">
               <h1 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">One more step!</h1>
               <SquiggleIcon className="absolute -right-1 -top-2 h-4 w-6 text-slate-400" />
@@ -108,7 +108,7 @@ export default function SignUp() {
             </p>
           </div>
 
-          <div className="diary-note min-w-0 flex-1 rounded-b-2xl p-6 sm:rounded-b-none sm:rounded-r-2xl sm:p-8">
+          <div className="diary-note diary-note--no-tape min-w-0 flex-1 rounded-b-2xl p-6 sm:rounded-b-none sm:rounded-r-2xl sm:p-8">
             <h2 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">Create your account</h2>
             <p className="font-diary-body mt-1 text-sm text-slate-500 dark:text-slate-400">Let&rsquo;s make your plans official!</p>
 
