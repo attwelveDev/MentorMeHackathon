@@ -747,48 +747,101 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
   `createActivity`, `updateActivity`, `deleteActivity`):
   ```js
   it('submitting the Edit form calls updateActivity(activity.id, fields) and the card reflects the change', async () => {
-    // render with one activity, click its Edit control, change the title field, submit,
-    // assert mockUpdateActivity called with ('a1', expect.objectContaining({ title: 'New title' }))
-    // and the new title appears in the card.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'New title' } })
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(mockUpdateActivity).toHaveBeenCalledWith('a1', expect.objectContaining({ title: 'New title' }))
+    // Uses getAllByText/length-check, not getByText: same legitimate
+    // duplication as Task 8 — the updated title shows in both the
+    // notification bar and its section card.
+    await waitFor(() => expect(screen.getAllByText('New title').length).toBeGreaterThan(0))
   })
 
   it('clicking Remove then confirming calls deleteActivity(activity.id) and the card disappears', async () => {
-    // render with one activity, click Remove, click the confirmation button,
-    // assert mockDeleteActivity called with 'a1' and the title is no longer in the document.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^yes$/i }))
+    await waitFor(() => expect(mockDeleteActivity).toHaveBeenCalledWith('a1'))
+    expect(screen.queryByText('Overdue item')).not.toBeInTheDocument()
   })
 
   it('clicking Remove without confirming does not call deleteActivity', async () => {
-    // click Remove, do not click confirm, assert mockDeleteActivity not called and the card remains.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
+    expect(mockDeleteActivity).not.toHaveBeenCalled()
+    expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0)
   })
 
   it('submitting "Add a new item" calls createActivity(plan.id, user.id, fields) with the chosen section as period, and the new item appears under that section', async () => {
-    // click "Add a new item", fill title/category/priority/section="Next break", submit,
-    // assert mockCreateActivity called with ('p1', 'u1', expect.objectContaining({ title: ..., period: 'Next break' }))
-    // and the title appears under the "Next break" heading.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
+    mockCreateActivity.mockResolvedValue({
+      id: 'a9', title: 'Talk to a mentor', category: 'Networking', period_label: 'Next break',
+      period_year: null, priority: 'Medium', explanation: '', status: 'Not started', due_date: null,
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText(/no activities yet/i)).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /add a new item/i }))
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Talk to a mentor' } })
+    fireEvent.change(screen.getByLabelText(/category/i), { target: { value: 'Networking' } })
+    fireEvent.change(screen.getByLabelText(/priority/i), { target: { value: 'Medium' } })
+    fireEvent.change(screen.getByLabelText(/section/i), { target: { value: 'Next break' } })
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }))
+    expect(mockCreateActivity).toHaveBeenCalledWith('p1', 'u1', expect.objectContaining({ title: 'Talk to a mentor', period: 'Next break' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Next break' })).toBeInTheDocument())
+    expect(screen.getByText('Talk to a mentor')).toBeInTheDocument()
   })
   ```
-  (Each test body follows the established `render` → `fireEvent` →
-  `waitFor`/`expect` pattern already used throughout `Diary.test.jsx`'s
-  earlier tasks and `Roadmap.test.jsx`; filled in verbatim at
-  implementation time, not abbreviated in the shipped test file.)
   Run `npm test` and confirm all fail.
-- **Implementation (green):**
-  - Edit: a per-card "Edit" `<button>` toggles a form (title/category
-    `<select>`/priority `<select>`/explanation `<textarea>`/due-date
-    `<input type="date">`) pre-filled from the activity; submit calls
+- **Implementation (green):** extracted a local `ActivityCard` component
+  (own `editing`/`confirmingRemove` state, since a `useState` per card can't
+  live in the `.map()` callback directly) and a local `AddActivityForm`
+  component, both defined in `Diary.jsx`.
+  - Edit: a per-card "Edit" `<button>` toggles a form (`<input
+    aria-label="Title">`, category `<select aria-label="Category">`,
+    priority `<select aria-label="Priority">`, `<textarea
+    aria-label="Explanation">`, `<input type="date" aria-label="Due date">`)
+    pre-filled from the activity; "Save" submits, calling
     `updateActivity(activity.id, { title, category, priority, explanation,
-    dueDate })` then updates local state with the returned fields.
-  - Remove: reuses `LockedAction`-free plain `<button>` (already
-    registered-only screen) showing an inline "Remove this item?
-    Yes/Cancel" confirmation before calling `deleteActivity(activity.id)`
-    then removing it from local state.
-  - Add: a bottom "Add a new item" `<button>` toggles a form (title,
-    category `<select>` from the 9 known category values, priority
-    `<select>`, section `<select>` from `SECTION_NAMES`, optional
-    explanation/due date); submit calls `createActivity(plan.id, user.id, {
-    title, category, priority, period: section, explanation, dueDate })`
-    then appends the returned row to local state (mapped the same way
-    loaded activities are).
+    dueDate })` then merging those same submitted fields into local state
+    (`updateActivity` itself resolves `undefined`, so there's no server
+    value to merge back — the submitted fields are the new local truth,
+    same pattern `Roadmap.jsx`'s `handleStatusChange` already uses for
+    `updateActivityStatus`); "Cancel" discards the edit.
+  - Remove: a per-card "Remove" `<button>` shows an inline "Remove this
+    item? Yes/Cancel" confirmation; "Yes" calls `deleteActivity(activity.id)`
+    then removes it from local state; "Cancel" dismisses the confirmation
+    without calling `deleteActivity`.
+  - Add: a bottom "Add a new item" `<button>` (rendered in both the
+    populated and empty-state right-page branches) toggles `AddActivityForm`
+    (`<input aria-label="Title">`, category `<select aria-label="Category">`
+    from the 9 known category values, priority `<select
+    aria-label="Priority">`, section `<select aria-label="Section">` from
+    `SECTION_NAMES`, optional `<textarea aria-label="Explanation">`/`<input
+    type="date" aria-label="Due date">`); "Add" submits, calling
+    `createActivity(plan.id, user.id, { title, category, priority, period:
+    section, explanation, dueDate })` then appending the returned row
+    (mapped via the same `mapDbActivity` used for loaded activities) to
+    local state.
 - **Refactor:** None expected.
 - **Acceptance criteria:** all four tests pass.
 - **Review gate:** No gate — additive UI using Task 2's already

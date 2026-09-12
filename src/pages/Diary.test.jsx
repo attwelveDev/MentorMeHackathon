@@ -7,9 +7,15 @@ vi.mock('../lib/auth', () => ({ useAuth: () => mockUseAuth() }))
 
 const mockGetPlanWithActivities = vi.fn()
 const mockUpdateActivityStatus = vi.fn()
+const mockUpdateActivity = vi.fn()
+const mockDeleteActivity = vi.fn()
+const mockCreateActivity = vi.fn()
 vi.mock('../lib/db', () => ({
   getPlanWithActivities: (...args) => mockGetPlanWithActivities(...args),
   updateActivityStatus: (...args) => mockUpdateActivityStatus(...args),
+  updateActivity: (...args) => mockUpdateActivity(...args),
+  deleteActivity: (...args) => mockDeleteActivity(...args),
+  createActivity: (...args) => mockCreateActivity(...args),
 }))
 
 import Diary from './Diary'
@@ -18,6 +24,9 @@ beforeEach(() => {
   mockUseAuth.mockReset()
   mockGetPlanWithActivities.mockReset()
   mockUpdateActivityStatus.mockReset().mockResolvedValue(undefined)
+  mockUpdateActivity.mockReset().mockResolvedValue(undefined)
+  mockDeleteActivity.mockReset().mockResolvedValue(undefined)
+  mockCreateActivity.mockReset()
 })
 
 describe('Diary dashboard', () => {
@@ -95,5 +104,67 @@ describe('Diary dashboard', () => {
     await waitFor(() => screen.getByText('Dated item'))
     expect(screen.getByText(/10 may 2026|may 10, 2026/i)).toBeInTheDocument()
     expect(screen.getAllByText('Now').length).toBeGreaterThan(0) // Undated item's section label, since it's overdue
+  })
+
+  it('submitting the Edit form calls updateActivity(activity.id, fields) and the card reflects the change', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^edit$/i }))
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'New title' } })
+    fireEvent.click(screen.getByRole('button', { name: /^save$/i }))
+    expect(mockUpdateActivity).toHaveBeenCalledWith('a1', expect.objectContaining({ title: 'New title' }))
+    await waitFor(() => expect(screen.getAllByText('New title').length).toBeGreaterThan(0))
+  })
+
+  it('clicking Remove then confirming calls deleteActivity(activity.id) and the card disappears', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
+    fireEvent.click(screen.getByRole('button', { name: /^yes$/i }))
+    await waitFor(() => expect(mockDeleteActivity).toHaveBeenCalledWith('a1'))
+    expect(screen.queryByText('Overdue item')).not.toBeInTheDocument()
+  })
+
+  it('clicking Remove without confirming does not call deleteActivity', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /^remove$/i }))
+    expect(mockDeleteActivity).not.toHaveBeenCalled()
+    expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0)
+  })
+
+  it('submitting "Add a new item" calls createActivity(plan.id, user.id, fields) with the chosen section as period, and the new item appears under that section', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
+    mockCreateActivity.mockResolvedValue({
+      id: 'a9', title: 'Talk to a mentor', category: 'Networking', period_label: 'Next break',
+      period_year: null, priority: 'Medium', explanation: '', status: 'Not started', due_date: null,
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText(/no activities yet/i)).toBeInTheDocument())
+    fireEvent.click(screen.getByRole('button', { name: /add a new item/i }))
+    fireEvent.change(screen.getByLabelText(/title/i), { target: { value: 'Talk to a mentor' } })
+    fireEvent.change(screen.getByLabelText(/category/i), { target: { value: 'Networking' } })
+    fireEvent.change(screen.getByLabelText(/priority/i), { target: { value: 'Medium' } })
+    fireEvent.change(screen.getByLabelText(/section/i), { target: { value: 'Next break' } })
+    fireEvent.click(screen.getByRole('button', { name: /^add$/i }))
+    expect(mockCreateActivity).toHaveBeenCalledWith('p1', 'u1', expect.objectContaining({ title: 'Talk to a mentor', period: 'Next break' }))
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Next break' })).toBeInTheDocument())
+    expect(screen.getByText('Talk to a mentor')).toBeInTheDocument()
   })
 })
