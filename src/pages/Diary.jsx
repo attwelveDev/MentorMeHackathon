@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { getPlanWithActivities } from '../lib/db'
-import { computeRoadmap, bucketActivities, SECTION_NAMES } from '../lib/roadmap'
-import NotebookFrame from '../components/NotebookFrame'
+import { computeRoadmap, bucketActivities, computeStats, SECTION_NAMES } from '../lib/roadmap'
+import { getNearestActivityNotification, getStreakNotification } from '../lib/notifications'
+import NotebookFrame, { StickyNote } from '../components/NotebookFrame'
 
 function mapDbActivity(row) {
   return {
@@ -55,6 +56,9 @@ export default function Diary() {
 
   const roadmap = computeRoadmap(activities, profile ?? {}, new Date().getFullYear())
   const buckets = bucketActivities(roadmap, profile ?? {}, new Date())
+  const stats = computeStats(roadmap)
+  const nearestActivity = getNearestActivityNotification(roadmap)
+  const streak = getStreakNotification(stats)
 
   const rightPage = (
     <>
@@ -78,7 +82,30 @@ export default function Diary() {
     </>
   )
 
-  const leftPage = null
+  const leftPage = (
+    <>
+      <StickyNote>Become a {profile?.targetOccupation}</StickyNote>
+      <p className="font-diary-title mt-6 text-2xl text-slate-800">Hi, how are you today?</p>
+      <div className="mt-6 space-y-3">
+        {nearestActivity && (
+          <div className="diary-note rounded-lg border border-slate-200 p-3">
+            <p className="font-diary-title text-sm font-semibold text-slate-800">{nearestActivity.title}</p>
+            <p className="font-diary-body text-xs text-slate-500">
+              {nearestActivity.dueDate
+                ? new Date(nearestActivity.dueDate).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })
+                : nearestActivity.period}
+            </p>
+          </div>
+        )}
+        {streak && (
+          <div className="diary-note rounded-lg border border-slate-200 p-3">
+            <p className="font-diary-title text-sm font-semibold text-slate-800">{streak.percent}% complete</p>
+            <p className="font-diary-body text-xs text-slate-500">{streak.completed}/{streak.total} activities</p>
+          </div>
+        )}
+      </div>
+    </>
+  )
 
   return <NotebookFrame leftPage={leftPage} rightPage={rightPage} />
 }

@@ -44,8 +44,26 @@ describe('Diary dashboard', () => {
       ],
     })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('Overdue item')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0))
     const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(headings).toEqual(['Now', 'Graduate application period'])
+  })
+
+  it("shows the student's goal and the static greeting on the left page", async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByText(/become a data analyst/i)).toBeInTheDocument())
+    expect(screen.getByText('Hi, how are you today?')).toBeInTheDocument()
+  })
+
+  it('shows a nearest-activity notification when one exists', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0))
   })
 })

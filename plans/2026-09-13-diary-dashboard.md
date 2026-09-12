@@ -608,7 +608,7 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
       ],
     })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('Overdue item')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0))
     const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
     expect(headings).toEqual(['Now', 'Graduate application period'])
   })
@@ -665,9 +665,13 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
       activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
     })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('Overdue item')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0))
   })
   ```
+  (Both this and Task 7's "renders only non-empty sections" test switched
+  from `getByText` to `getAllByText`/length-check during execution: once
+  this task's notification bar ships, an activity's title can legitimately
+  appear twice — once in its notification, once in its section card.)
   Run `npm test` and confirm both fail.
 - **Implementation (green):** `leftPage` renders a `<StickyNote>` (from
   `NotebookFrame`) with `Become a {profile.targetOccupation}`, an `<h2>Hi,
