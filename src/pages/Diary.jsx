@@ -1,10 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { getPlanWithActivities, updateActivityStatus, updateActivity, deleteActivity, createActivity } from '../lib/db'
+import {
+  getPlanWithActivities, updateActivityStatus, updateActivity, deleteActivity, createActivity,
+  getDiaryEntriesForActivity, createDiaryEntry, setDiaryEntryFeedback,
+} from '../lib/db'
+import { getDiaryFeedback } from '../lib/ai'
 import { computeRoadmap, bucketActivities, computeStats, SECTION_NAMES } from '../lib/roadmap'
 import { getNearestActivityNotification, getStreakNotification } from '../lib/notifications'
+import { getReflectionPrompt } from '../lib/reflectionPrompts'
 import NotebookFrame, { StickyNote } from '../components/NotebookFrame'
+import DiarySection from '../components/DiarySection'
 
 const PROGRESS_BY_STATUS = { 'Not started': 0, 'In progress': 50, 'Completed': 100 }
 
@@ -35,7 +41,7 @@ function mapDbActivity(row) {
   }
 }
 
-function ActivityCard({ activity, sectionName, onToggleComplete, onEdit, onRemove }) {
+function ActivityCard({ activity, sectionName, userId, onToggleComplete, onEdit, onRemove }) {
   const [editing, setEditing] = useState(false)
   const [confirmingRemove, setConfirmingRemove] = useState(false)
   const [title, setTitle] = useState(activity.title)
@@ -43,11 +49,37 @@ function ActivityCard({ activity, sectionName, onToggleComplete, onEdit, onRemov
   const [priority, setPriority] = useState(activity.priority)
   const [explanation, setExplanation] = useState(activity.explanation ?? '')
   const [dueDate, setDueDate] = useState(activity.dueDate ?? '')
+  const [reflectionOpen, setReflectionOpen] = useState(false)
+  const [diaryEntries, setDiaryEntries] = useState(null)
+
+  useEffect(() => {
+    let cancelled = false
+    if (reflectionOpen && diaryEntries === null) {
+      getDiaryEntriesForActivity(activity.id).then((entries) => {
+        if (!cancelled) setDiaryEntries(entries)
+      })
+    }
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reflectionOpen])
 
   function handleSubmit(e) {
     e.preventDefault()
     onEdit({ title, category, priority, explanation, dueDate: dueDate || null })
     setEditing(false)
+  }
+
+  async function handleAddEntry(text) {
+    const entry = await createDiaryEntry(activity.id, userId, text)
+    setDiaryEntries((prev) => [entry, ...(prev ?? [])])
+  }
+
+  async function handleRequestFeedback(entryId) {
+    const entry = (diaryEntries ?? []).find((e) => e.id === entryId)
+    if (!entry) return
+    const feedback = await getDiaryFeedback(activity, entry.entry_text)
+    await setDiaryEntryFeedback(entryId, feedback)
+    setDiaryEntries((prev) => prev.map((e) => (e.id === entryId ? { ...e, ai_feedback: feedback } : e)))
   }
 
   return (
@@ -118,7 +150,22 @@ function ActivityCard({ activity, sectionName, onToggleComplete, onEdit, onRemov
                 ) : (
                   <button type="button" onClick={() => setConfirmingRemove(true)} className="text-sm text-red-600 hover:underline">Remove</button>
                 )}
+                <button type="button" onClick={() => setReflectionOpen((open) => !open)} className="text-sm text-slate-600 hover:underline">
+                  {reflectionOpen ? 'Hide reflection' : 'Reflection'}
+                </button>
               </div>
+              {reflectionOpen && (
+                diaryEntries === null ? (
+                  <p className="font-diary-body mt-2 text-sm text-slate-500">Loading…</p>
+                ) : (
+                  <DiarySection
+                    diaryEntries={diaryEntries}
+                    onAddEntry={handleAddEntry}
+                    onRequestFeedback={handleRequestFeedback}
+                    prompt={getReflectionPrompt(activity.category)}
+                  />
+                )
+              )}
             </>
           )}
         </div>
@@ -257,7 +304,10 @@ export default function Diary() {
 
   const rightPage = (
     <>
-      <h1 className="font-diary-title text-4xl text-slate-800">My Plan</h1>
+      <div className="flex items-start justify-between gap-4">
+        <h1 className="font-diary-title text-4xl text-slate-800">My Plan</h1>
+        <Link to="/plan" className="font-diary-title text-lg text-indigo-700 hover:underline">View roadmap →</Link>
+      </div>
       {activities.length === 0 ? (
         <p className="font-diary-body mt-6 text-slate-500">No activities yet.</p>
       ) : (
@@ -271,6 +321,7 @@ export default function Diary() {
                     key={activity.id}
                     activity={activity}
                     sectionName={name}
+                    userId={user.id}
                     onToggleComplete={handleToggleComplete}
                     onEdit={(fields) => handleEditActivity(activity, fields)}
                     onRemove={() => handleRemoveActivity(activity)}

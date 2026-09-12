@@ -863,38 +863,59 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
   and `../lib/ai`'s `getDiaryFeedback`):
   ```js
   it("expanding an item's Reflection section shows its category-specific prompt and loads its diary entries", async () => {
-    // render with one Networking-category activity, click its "Reflection" control,
-    // assert mockGetDiaryEntriesForActivity called with 'a1', and
-    // screen.getByText('Who did you meet? What insights did you gain?') is present.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /reflection/i }))
+    await waitFor(() => expect(mockGetDiaryEntriesForActivity).toHaveBeenCalledWith('a1'))
+    expect(screen.getByText('Who did you meet? What insights did you gain?')).toBeInTheDocument()
   })
 
   it('submitting a reflection entry calls createDiaryEntry(activity.id, user.id, text) and the entry appears', async () => {
-    // expand Reflection, type text, submit, assert mockCreateDiaryEntry called correctly
-    // and the entry text appears in the list.
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    mockCreateDiaryEntry.mockResolvedValue({ id: 'd1', entry_text: 'Met a mentor today.', created_at: '2026-09-01T00:00:00Z' })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /reflection/i }))
+    await waitFor(() => expect(mockGetDiaryEntriesForActivity).toHaveBeenCalledWith('a1'))
+    fireEvent.change(screen.getByRole('textbox', { name: /diary entry/i }), { target: { value: 'Met a mentor today.' } })
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }))
+    expect(mockCreateDiaryEntry).toHaveBeenCalledWith('a1', 'u1', 'Met a mentor today.')
+    await waitFor(() => expect(screen.getByText('Met a mentor today.')).toBeInTheDocument())
   })
 
-  it('a "View roadmap" link navigates to /plan', () => {
+  it('a "View roadmap" link navigates to /plan', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: /view roadmap/i })).toHaveAttribute('href', '/plan')
+    // Async, not sync as originally drafted: Diary's plan load is
+    // asynchronous, so the link doesn't exist until it resolves.
+    await waitFor(() => expect(screen.getByRole('link', { name: /view roadmap/i })).toHaveAttribute('href', '/plan'))
   })
   ```
-  (Reflection test bodies filled in verbatim at implementation time,
-  following the same expand-then-assert pattern as `CheckpointPanel`'s
-  existing diary tests, now targeting `DiarySection` inline instead of
-  inside a modal.)
   Run `npm test` and confirm all fail.
-- **Implementation (green):** each card gets a "Reflection" toggle that,
-  on first expand, calls `getDiaryEntriesForActivity(activity.id)` and
-  stores the result in per-activity state, then renders `<DiarySection
-  diaryEntries={...} onAddEntry={(text) => handleAddEntry(activity, text)}
-  onRequestFeedback={(id) => handleRequestFeedback(activity, id)}
-  prompt={getReflectionPrompt(activity.category)} />`, where
+- **Implementation (green):** `ActivityCard` (from Task 10) gets a
+  "Reflection" toggle button that, on first expand, calls
+  `getDiaryEntriesForActivity(activity.id)` and stores the result in its own
+  local state (`diaryEntries`, `null` until loaded), then renders
+  `<DiarySection diaryEntries={...} onAddEntry={handleAddEntry}
+  onRequestFeedback={handleRequestFeedback}
+  prompt={getReflectionPrompt(activity.category)} />`. `ActivityCard`'s own
   `handleAddEntry`/`handleRequestFeedback` mirror `Roadmap.jsx`'s existing
-  `handleAddEntry`/`handleRequestFeedback` (lines 220–232) exactly, scoped
-  per-activity. The right page header renders `<Link to="/plan"
-  className="...">View roadmap →</Link>` positioned top-right.
+  `handleAddEntry`/`handleRequestFeedback` (lines 220–232) exactly, using a
+  new `userId` prop threaded down from `Diary`'s `user.id` (rather than
+  `ActivityCard` calling `useAuth()` itself, since `Diary` already gates on
+  `user` before rendering any cards). The right page header renders `<Link
+  to="/plan" className="...">View roadmap →</Link>` positioned top-right,
+  next to the "My Plan" heading.
 - **Refactor:** None expected.
 - **Acceptance criteria:** all three tests pass.
 - **Review gate:** No gate — reuses Task 5/6's already gate-checked pieces
@@ -907,11 +928,12 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
 ## 6. Feature-level Definition of Done
 
 - [x] Task 1 complete: migration applied to real Supabase project, user-confirmed 2026-09-13
-- [ ] Every task in §5 complete and its tests passing
-- [ ] `npm test` passes for the full suite
-- [ ] `npm run lint` passes (or is confirmed still pre-existing-broken for
-      reasons unrelated to this feature, per the precedent noted in
-      `plans/2026-09-12-diary.md` §6)
+- [x] Every task in §5 complete and its tests passing
+- [x] `npm test` passes for the full suite (222 tests, 2026-09-13)
+- [x] `npm run lint` confirmed pre-existing-broken (no `eslint.config.js`
+      exists anywhere in the repo history, at HEAD before this feature's
+      changes either) — unrelated to this feature, same precedent as
+      `plans/2026-09-12-diary.md` §6
 - [ ] Manually verified (`vercel dev`, real Supabase project with Task 1's
       migration applied): log in with an existing plan → land on `/diary` →
       see goal/notifications and non-empty sections only → check off an
@@ -922,10 +944,10 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
       verify a signed-out visitor sees only the locked prompt, and a
       brand-new account with zero activities sees the single empty-state
       message.
-- [ ] Every requirement in §2 is covered — see §7
-- [ ] Task 1 (the only gated task) has been shown to the user and explicitly
-      accepted
-- [ ] No item remains in §8
+- [x] Every requirement in §2 is covered — see §7
+- [x] Task 1 (the only gated task) has been shown to the user and explicitly
+      accepted (2026-09-13)
+- [x] No item remains in §8
 
 ## 7. Requirements coverage check
 

@@ -10,13 +10,22 @@ const mockUpdateActivityStatus = vi.fn()
 const mockUpdateActivity = vi.fn()
 const mockDeleteActivity = vi.fn()
 const mockCreateActivity = vi.fn()
+const mockGetDiaryEntriesForActivity = vi.fn()
+const mockCreateDiaryEntry = vi.fn()
+const mockSetDiaryEntryFeedback = vi.fn()
 vi.mock('../lib/db', () => ({
   getPlanWithActivities: (...args) => mockGetPlanWithActivities(...args),
   updateActivityStatus: (...args) => mockUpdateActivityStatus(...args),
   updateActivity: (...args) => mockUpdateActivity(...args),
   deleteActivity: (...args) => mockDeleteActivity(...args),
   createActivity: (...args) => mockCreateActivity(...args),
+  getDiaryEntriesForActivity: (...args) => mockGetDiaryEntriesForActivity(...args),
+  createDiaryEntry: (...args) => mockCreateDiaryEntry(...args),
+  setDiaryEntryFeedback: (...args) => mockSetDiaryEntryFeedback(...args),
 }))
+
+const mockGetDiaryFeedback = vi.fn()
+vi.mock('../lib/ai', () => ({ getDiaryFeedback: (...args) => mockGetDiaryFeedback(...args) }))
 
 import Diary from './Diary'
 
@@ -27,6 +36,10 @@ beforeEach(() => {
   mockUpdateActivity.mockReset().mockResolvedValue(undefined)
   mockDeleteActivity.mockReset().mockResolvedValue(undefined)
   mockCreateActivity.mockReset()
+  mockGetDiaryEntriesForActivity.mockReset().mockResolvedValue([])
+  mockCreateDiaryEntry.mockReset()
+  mockSetDiaryEntryFeedback.mockReset().mockResolvedValue(undefined)
+  mockGetDiaryFeedback.mockReset()
 })
 
 describe('Diary dashboard', () => {
@@ -166,5 +179,42 @@ describe('Diary dashboard', () => {
     expect(mockCreateActivity).toHaveBeenCalledWith('p1', 'u1', expect.objectContaining({ title: 'Talk to a mentor', period: 'Next break' }))
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Next break' })).toBeInTheDocument())
     expect(screen.getByText('Talk to a mentor')).toBeInTheDocument()
+  })
+
+  it("expanding an item's Reflection section shows its category-specific prompt and loads its diary entries", async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /reflection/i }))
+    await waitFor(() => expect(mockGetDiaryEntriesForActivity).toHaveBeenCalledWith('a1'))
+    expect(screen.getByText('Who did you meet? What insights did you gain?')).toBeInTheDocument()
+  })
+
+  it('submitting a reflection entry calls createDiaryEntry(activity.id, user.id, text) and the entry appears', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [{ id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null }],
+    })
+    mockCreateDiaryEntry.mockResolvedValue({ id: 'd1', entry_text: 'Met a mentor today.', created_at: '2026-09-01T00:00:00Z' })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => screen.getAllByText('Overdue item'))
+    fireEvent.click(screen.getByRole('button', { name: /reflection/i }))
+    await waitFor(() => expect(mockGetDiaryEntriesForActivity).toHaveBeenCalledWith('a1'))
+    fireEvent.change(screen.getByRole('textbox', { name: /diary entry/i }), { target: { value: 'Met a mentor today.' } })
+    fireEvent.click(screen.getByRole('button', { name: /add entry/i }))
+    expect(mockCreateDiaryEntry).toHaveBeenCalledWith('a1', 'u1', 'Met a mentor today.')
+    await waitFor(() => expect(screen.getByText('Met a mentor today.')).toBeInTheDocument())
+  })
+
+  it('a "View roadmap" link navigates to /plan', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
+    render(<MemoryRouter><Diary /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByRole('link', { name: /view roadmap/i })).toHaveAttribute('href', '/plan'))
   })
 })
