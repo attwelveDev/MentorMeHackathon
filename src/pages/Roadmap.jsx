@@ -191,7 +191,7 @@ export default function Roadmap() {
               key={to}
               to={to}
               style={{ backgroundColor: bg, marginLeft: `${i * 6}px` }}
-              className="diary-tab font-diary-title mb-3 block rounded-r-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
+              className="diary-tab font-diary-title mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
             >
               {label}
             </Link>
@@ -199,7 +199,7 @@ export default function Roadmap() {
           <span
             aria-disabled="true"
             style={{ backgroundColor: '#e7e5e4', marginLeft: `${TABS.length * 6}px` }}
-            className="diary-tab font-diary-title mb-3 block rounded-r-xl py-3 pl-4 pr-2 text-lg text-slate-400"
+            className="diary-tab font-diary-title mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-400"
           >
             Jobs (coming soon)
           </span>
