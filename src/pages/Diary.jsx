@@ -1,16 +1,41 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
-import { getDiaryEntries } from '../lib/db'
+import { getPlanWithActivities } from '../lib/db'
+import { computeRoadmap, bucketActivities, SECTION_NAMES } from '../lib/roadmap'
+import NotebookFrame from '../components/NotebookFrame'
+
+function mapDbActivity(row) {
+  return {
+    id: row.id,
+    title: row.title,
+    category: row.category,
+    period: row.period_label,
+    periodYear: row.period_year,
+    priority: row.priority,
+    explanation: row.explanation,
+    status: row.status,
+    dueDate: row.due_date,
+  }
+}
 
 export default function Diary() {
   const { user } = useAuth()
-  const [entries, setEntries] = useState([])
+  const [plan, setPlan] = useState(null)
+  const [profile, setProfile] = useState(null)
+  const [activities, setActivities] = useState(null)
 
   useEffect(() => {
+    let cancelled = false
     if (user) {
-      getDiaryEntries(user.id).then(setEntries)
+      getPlanWithActivities(user.id).then((existing) => {
+        if (cancelled || !existing) return
+        setPlan(existing.plan)
+        setProfile({ targetOccupation: existing.plan.target_occupation })
+        setActivities(existing.activities.map(mapDbActivity))
+      })
     }
+    return () => { cancelled = true }
   }, [user])
 
   if (!user) {
@@ -26,23 +51,34 @@ export default function Diary() {
     )
   }
 
-  return (
-    <div className="diary-paper min-h-screen py-10">
-      <div className="mx-auto max-w-3xl px-4">
-        <h1 className="font-diary-title text-4xl text-slate-800">Diary</h1>
-        <div className="mt-6 space-y-4">
-          {entries.map((entry) => (
-            <article key={entry.id} className="diary-note rounded-2xl p-6">
-              <p className="font-diary-title text-lg font-semibold text-slate-900">{entry.activity?.title}</p>
-              <p className="font-diary-body mt-2 text-sm text-slate-800">{entry.entry_text}</p>
-              <p className="font-diary-body mt-2 text-xs text-slate-500">{new Date(entry.created_at).toLocaleString()}</p>
-              {entry.ai_feedback && (
-                <p className="mt-2 rounded-md bg-indigo-50 p-2 text-sm text-indigo-800">{entry.ai_feedback}</p>
-              )}
-            </article>
+  if (!activities) return null
+
+  const roadmap = computeRoadmap(activities, profile ?? {}, new Date().getFullYear())
+  const buckets = bucketActivities(roadmap, profile ?? {}, new Date())
+
+  const rightPage = (
+    <>
+      <h1 className="font-diary-title text-4xl text-slate-800">My Plan</h1>
+      {activities.length === 0 ? (
+        <p className="font-diary-body mt-6 text-slate-500">No activities yet.</p>
+      ) : (
+        <div className="mt-8 space-y-8">
+          {SECTION_NAMES.filter((name) => buckets[name].length > 0).map((name) => (
+            <section key={name}>
+              <h2 className="font-diary-title text-2xl text-slate-800">{name}</h2>
+              <div className="mt-3 space-y-3">
+                {buckets[name].map((activity) => (
+                  <p key={activity.id} className="font-diary-body text-slate-800">{activity.title}</p>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
-      </div>
-    </div>
+      )}
+    </>
   )
+
+  const leftPage = null
+
+  return <NotebookFrame leftPage={leftPage} rightPage={rightPage} />
 }

@@ -603,6 +603,7 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
       plan: { id: 'p1', target_occupation: 'Data Analyst' },
       activities: [
         { id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null },
+        { id: 'a3', title: 'Current item', category: 'Networking', period_label: 'Year 2', period_year: 2026, priority: 'Medium', explanation: 'x', status: 'Not started', due_date: null },
         { id: 'a2', title: 'Grad item', category: 'Application preparation', period_label: 'Year 4', period_year: 2030, priority: 'Medium', explanation: 'x', status: 'Not started', due_date: null },
       ],
     })
@@ -612,6 +613,12 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
     expect(headings).toEqual(['Now', 'Graduate application period'])
   })
   ```
+  (Fixture note from plan review: `computeRoadmap` always pins exactly one
+  non-completed, non-past activity as `current`; with only an overdue and a
+  distant-future activity, the distant one would itself become the sole
+  `current` candidate and land in "Now" instead of "Graduate application
+  period". The added `Current item` (periodYear === currentYear) absorbs the
+  pin so "Grad item" is genuinely `upcoming`.)
   Run `npm test` and confirm all fail.
 - **Implementation (green):** `Diary.jsx` mirrors `Roadmap.jsx`'s loading
   pattern: on mount (if `user`), call `getPlanWithActivities(user.id)`, and

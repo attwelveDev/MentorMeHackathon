@@ -5,43 +5,47 @@ import { MemoryRouter } from 'react-router-dom'
 const mockUseAuth = vi.fn()
 vi.mock('../lib/auth', () => ({ useAuth: () => mockUseAuth() }))
 
-const mockGetDiaryEntries = vi.fn()
-vi.mock('../lib/db', () => ({ getDiaryEntries: (...args) => mockGetDiaryEntries(...args) }))
+const mockGetPlanWithActivities = vi.fn()
+vi.mock('../lib/db', () => ({
+  getPlanWithActivities: (...args) => mockGetPlanWithActivities(...args),
+}))
 
 import Diary from './Diary'
 
 beforeEach(() => {
   mockUseAuth.mockReset()
-  mockGetDiaryEntries.mockReset().mockResolvedValue([])
+  mockGetPlanWithActivities.mockReset()
 })
 
-describe('Diary screen', () => {
-  it('shows a locked "Create an account to keep a diary" prompt linking to /signup for a signed-out guest', () => {
+describe('Diary dashboard', () => {
+  it('shows the locked "Create an account to keep a diary" prompt linking to /signup for a signed-out guest', () => {
     mockUseAuth.mockReturnValue({ user: null })
     render(<MemoryRouter><Diary /></MemoryRouter>)
     expect(screen.getByText(/create an account to keep a diary/i)).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /sign up/i })).toHaveAttribute('href', '/signup')
   })
 
-  it("renders each entry's activity title, entry text, and timestamp, most recent first, for a signed-in user", async () => {
+  it('shows one empty-state message instead of six empty sections when the plan has zero activities', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    mockGetDiaryEntries.mockResolvedValue([
-      { id: 'd2', entry_text: 'Second entry', created_at: '2026-09-10T00:00:00Z', activity: { title: 'Apply for internships' } },
-      { id: 'd1', entry_text: 'First entry', created_at: '2026-09-01T00:00:00Z', activity: { title: 'Build a portfolio' } },
-    ])
+    mockGetPlanWithActivities.mockResolvedValue({ plan: { id: 'p1', target_occupation: 'Data Analyst' }, activities: [] })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('Second entry')).toBeInTheDocument())
-    const entries = screen.getAllByRole('article')
-    expect(entries[0]).toHaveTextContent('Apply for internships')
-    expect(entries[1]).toHaveTextContent('Build a portfolio')
+    await waitFor(() => expect(screen.getByText(/no activities yet/i)).toBeInTheDocument())
+    expect(screen.queryByText('Now')).not.toBeInTheDocument()
   })
 
-  it('renders ai_feedback under an entry when present', async () => {
+  it('renders only non-empty sections, in SECTION_NAMES order', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    mockGetDiaryEntries.mockResolvedValue([
-      { id: 'd1', entry_text: 'Entry', created_at: '2026-09-01T00:00:00Z', ai_feedback: 'Nice work!', activity: { title: 'x' } },
-    ])
+    mockGetPlanWithActivities.mockResolvedValue({
+      plan: { id: 'p1', target_occupation: 'Data Analyst' },
+      activities: [
+        { id: 'a1', title: 'Overdue item', category: 'Networking', period_label: 'Year 1', period_year: 2020, priority: 'High', explanation: 'x', status: 'Not started', due_date: null },
+        { id: 'a3', title: 'Current item', category: 'Networking', period_label: 'Year 2', period_year: 2026, priority: 'Medium', explanation: 'x', status: 'Not started', due_date: null },
+        { id: 'a2', title: 'Grad item', category: 'Application preparation', period_label: 'Year 4', period_year: 2030, priority: 'Medium', explanation: 'x', status: 'Not started', due_date: null },
+      ],
+    })
     render(<MemoryRouter><Diary /></MemoryRouter>)
-    await waitFor(() => expect(screen.getByText('Nice work!')).toBeInTheDocument())
+    await waitFor(() => expect(screen.getByText('Overdue item')).toBeInTheDocument())
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(headings).toEqual(['Now', 'Graduate application period'])
   })
 })
