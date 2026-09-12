@@ -257,7 +257,7 @@ for this plan.
 - **Review gate:** No gate — green tests + acceptance criteria are sufficient.
 - **Depends on:** None.
 
-### Task 3: `src/lib/marketUpdates.js` — pure filtering/classification-safety logic
+### Task 3: `src/lib/marketUpdates.js` — pure filtering/classification-safety logic [x]
 
 - **Description:** New module holding the fixed topic/status enums and all pure narrowing logic: profile matching, recency bucketing, enum-safety validation of an AI-classified item, and combined filter+sort.
 - **Files touched:** new `src/lib/marketUpdates.js`, new `src/lib/marketUpdates.test.js`.
@@ -310,7 +310,11 @@ for this plan.
 
   describe('filterAndSortUpdates', () => {
     const items = [
-      { id: 'a', topic: 'Technology', publishedDate: '2026-09-01', headline: 'AI shortage', summary: 'x', source: 'JSA' },
+      // Phase 1 correction: originally publishedDate: '2026-09-01' (12 days
+      // before the 'today' below), which recencyBucket buckets as
+      // this-month, not this-week as the "filters by recency bucket" test
+      // below requires — moved to 2026-09-10 (within 7 days).
+      { id: 'a', topic: 'Technology', publishedDate: '2026-09-10', headline: 'AI shortage', summary: 'x', source: 'JSA' },
       { id: 'b', topic: 'Policy', publishedDate: '2026-08-01', headline: 'Visa change', summary: 'y', source: 'Home Affairs' },
     ]
     it('returns all items sorted newest-first when topic is All and recency is All and search is empty', () => {
