@@ -20,11 +20,11 @@ vi.mock('../lib/db', () => ({
   setPlanAccepted: vi.fn(),
   deleteActivity: vi.fn(),
 }))
-vi.mock('../lib/localPlan', () => ({ saveGuestPlan: vi.fn() }))
+vi.mock('../lib/localPlan', () => ({ saveGuestPlan: vi.fn(), loadGuestPlan: vi.fn() }))
 
 import { generateCareerPlan } from '../lib/ai'
 import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
-import { saveGuestPlan } from '../lib/localPlan'
+import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import Roadmap from './Roadmap'
 
 const studentProfile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4', targetOccupation: 'Data Analyst' }
@@ -57,6 +57,7 @@ beforeEach(() => {
   setPlanAccepted.mockReset().mockResolvedValue(undefined)
   deleteActivity.mockReset().mockResolvedValue(undefined)
   saveGuestPlan.mockReset().mockReturnValue({ ok: true })
+  loadGuestPlan.mockReset().mockReturnValue(null)
 })
 
 describe('Roadmap — guest, fresh generation', () => {
@@ -328,5 +329,25 @@ describe('Roadmap — checkpoint panel, Save, Accept', () => {
     renderRoadmap()
     await screen.findByRole('heading', { name: 'Year 1' })
     expect(screen.queryByRole('button', { name: /^save$/i })).not.toBeInTheDocument()
+  })
+})
+
+describe('Roadmap — guest plan persistence across navigation', () => {
+  it('for a guest with a previously-saved plan and no router-state profile, loads it from localStorage instead of redirecting to /profile', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: undefined })
+    loadGuestPlan.mockReturnValue({ profile: studentProfile, activities: rawActivities })
+    renderRoadmap()
+    expect(await screen.findByRole('heading', { name: 'Year 1' })).toBeInTheDocument()
+    expect(generateCareerPlan).not.toHaveBeenCalled()
+  })
+
+  it('auto-saves a freshly generated guest plan to localStorage without requiring the Save button to be clicked', async () => {
+    mockUseAuth.mockReturnValue({ user: null })
+    mockUseLocation.mockReturnValue({ state: { profile: studentProfile } })
+    generateCareerPlan.mockResolvedValue(JSON.stringify(rawActivities))
+    renderRoadmap()
+    await screen.findByRole('heading', { name: 'Year 1' })
+    await waitFor(() => expect(saveGuestPlan).toHaveBeenCalledWith(studentProfile, rawActivities))
   })
 })

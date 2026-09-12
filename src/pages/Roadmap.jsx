@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { generateCareerPlan } from '../lib/ai'
 import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from '../lib/db'
-import { saveGuestPlan } from '../lib/localPlan'
+import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
 import LockedAction from '../components/LockedAction'
 import CheckpointPanel from '../components/CheckpointPanel'
@@ -85,6 +85,15 @@ export default function Roadmap() {
       }
 
       if (!state?.profile) {
+        if (!user) {
+          const guest = loadGuestPlan()
+          if (guest) {
+            setProfile(guest.profile)
+            setActivities(guest.activities)
+            setLoading(false)
+            return
+          }
+        }
         navigate('/profile')
         return
       }
@@ -108,6 +117,15 @@ export default function Roadmap() {
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Keeps a guest's plan in this browser continuously, not just when they
+  // remember to click Save - so navigating away (including to /signup)
+  // never silently loses it.
+  useEffect(() => {
+    if (!user && profile && activities) {
+      saveGuestPlan(profile, activities)
+    }
+  }, [user, profile, activities])
 
   if (loading) return <Centered>Building your plan…</Centered>
   if (error) return <Centered className="text-red-700">{error}</Centered>

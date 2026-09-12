@@ -7,6 +7,7 @@ import MarketUpdates from './pages/MarketUpdates'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
 import { AuthProvider, useAuth } from './lib/auth'
+import GuestPlanMigrator from './components/GuestPlanMigrator'
 
 function AuthNav() {
   const { user, signOut } = useAuth()
@@ -23,6 +24,7 @@ function AuthNav() {
 export default function App() {
   return (
     <AuthProvider>
+      <GuestPlanMigrator />
       <div className="min-h-screen bg-slate-50">
         <nav className="border-b border-slate-200 bg-white px-4 py-3">
           <div className="mx-auto flex max-w-3xl items-center gap-4 text-sm">
