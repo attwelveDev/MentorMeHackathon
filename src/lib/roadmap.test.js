@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getExpectedPeriodLabels, periodYearFor, computeRoadmap, computeStats, pickCurrentPeriod } from './roadmap'
+import { getExpectedPeriodLabels, periodYearFor, computeRoadmap, computeStats, pickCurrentPeriod, SECTION_NAMES, bucketActivities } from './roadmap'
 
 const studentProfile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4', targetOccupation: 'Data Analyst' }
 const gradProfile = { studyStage: 'recently-completed', graduationYear: '2023', targetOccupation: 'Data Analyst' }
@@ -96,6 +96,72 @@ describe('pickCurrentPeriod', () => {
     const result = pickCurrentPeriod(profile, 2026)
     expect(result.periodLabel).not.toBe('Before graduating')
     expect(result).toEqual({ periodLabel: 'Year 1 after graduating', periodYear: 2026 })
+  })
+})
+
+describe('bucketActivities', () => {
+  const profile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4' }
+
+  it('returns an object with all six SECTION_NAMES keys, each an array', () => {
+    const result = bucketActivities([], profile, new Date('2026-03-15'))
+    expect(Object.keys(result)).toEqual(SECTION_NAMES)
+    SECTION_NAMES.forEach((name) => expect(Array.isArray(result[name])).toBe(true))
+  })
+
+  it('buckets a current/overdue-colour activity into "Now"', () => {
+    const roadmap = [
+      { title: 'Overdue thing', colour: 'missed', period: 'Year 2', periodYear: 2025, dueDate: null },
+      { title: 'Pinned thing', colour: 'current', period: 'Year 3', periodYear: 2026, dueDate: null },
+    ]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    expect(result.Now.map((a) => a.title)).toEqual(['Overdue thing', 'Pinned thing'])
+  })
+
+  it('passes a student-added activity straight through when period already matches a section name', () => {
+    const roadmap = [{ title: 'My own task', colour: 'upcoming', period: 'Next break', periodYear: null, dueDate: null }]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    expect(result['Next break'].map((a) => a.title)).toEqual(['My own task'])
+  })
+
+  it('buckets an undated upcoming activity by periodYear relative to currentYear', () => {
+    const roadmap = [
+      { title: 'This year', colour: 'upcoming', period: 'Year 3', periodYear: 2026, dueDate: null },
+      { title: 'Next year', colour: 'upcoming', period: 'Year 4', periodYear: 2027, dueDate: null },
+      { title: 'Before final year', colour: 'upcoming', period: 'Year 2', periodYear: 2025, dueDate: null },
+    ]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    expect(result['This semester'].map((a) => a.title)).toContain('This year')
+    expect(result['Next semester'].map((a) => a.title)).toContain('Next year')
+  })
+
+  it('buckets an undated upcoming activity at or after graduationYear into "Graduate application period"', () => {
+    const roadmap = [{ title: 'Grad task', colour: 'upcoming', period: 'Year 4', periodYear: 2029, dueDate: null }]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    expect(result['Graduate application period'].map((a) => a.title)).toContain('Grad task')
+  })
+
+  it('buckets a dated activity by which semester/break window its due date falls in (today in Sem1)', () => {
+    const roadmap = [
+      { title: 'Due this semester', colour: 'upcoming', period: 'Year 3', periodYear: 2026, dueDate: '2026-05-10' },
+      { title: 'Due next semester', colour: 'upcoming', period: 'Year 3', periodYear: 2026, dueDate: '2026-09-01' },
+      { title: 'Due next break', colour: 'upcoming', period: 'Year 3', periodYear: 2026, dueDate: '2026-12-20' },
+    ]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    expect(result['This semester'].map((a) => a.title)).toContain('Due this semester')
+    expect(result['Next semester'].map((a) => a.title)).toContain('Due next semester')
+    expect(result['Next break'].map((a) => a.title)).toContain('Due next break')
+  })
+
+  it('when today falls inside a break window, treats the upcoming semester as "This semester"', () => {
+    const roadmap = [{ title: 'Due in Feb', colour: 'upcoming', period: 'Year 3', periodYear: 2027, dueDate: '2027-02-10' }]
+    const result = bucketActivities(roadmap, profile, new Date('2026-12-15'))
+    expect(result['This semester'].map((a) => a.title)).toContain('Due in Feb')
+  })
+
+  it('excludes a "Before graduating" summary activity from every section', () => {
+    const roadmap = [{ title: 'Everything before graduating', colour: 'completed', period: 'Before graduating', periodYear: null, dueDate: null }]
+    const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
+    SECTION_NAMES.forEach((name) => expect(result[name].map((a) => a.title)).not.toContain('Everything before graduating'))
   })
 })
 

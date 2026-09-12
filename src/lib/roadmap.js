@@ -55,6 +55,79 @@ export function computeRoadmap(activities, profile, currentYear = new Date().get
   })
 }
 
+export const SECTION_NAMES = [
+  'Now', 'This semester', 'Next semester', 'Next break',
+  'Before final year', 'Graduate application period',
+]
+
+function semesterWindowFor(date) {
+  const y = date.getFullYear()
+  const m = date.getMonth() + 1
+  if (m >= 2 && m <= 6) return { key: 'sem1', year: y, start: new Date(y, 1, 1), end: new Date(y, 5, 30) }
+  if (m >= 7 && m <= 11) return { key: 'sem2', year: y, start: new Date(y, 6, 1), end: new Date(y, 10, 30) }
+  const breakYear = m === 1 ? y - 1 : y
+  return { key: 'break', year: breakYear, start: new Date(breakYear, 11, 1), end: new Date(breakYear + 1, 0, 31) }
+}
+
+function nextSemesterWindow(w) {
+  if (w.key === 'sem1') return { key: 'sem2', year: w.year, start: new Date(w.year, 6, 1), end: new Date(w.year, 10, 30) }
+  if (w.key === 'sem2') return { key: 'break', year: w.year, start: new Date(w.year, 11, 1), end: new Date(w.year + 1, 0, 31) }
+  return { key: 'sem1', year: w.year + 1, start: new Date(w.year + 1, 1, 1), end: new Date(w.year + 1, 5, 30) }
+}
+
+function upcomingWindows(today) {
+  let w = semesterWindowFor(today)
+  if (w.key === 'break') w = nextSemesterWindow(w)
+  const second = nextSemesterWindow(w)
+  return second.key === 'break'
+    ? { thisSemester: w, nextSemester: nextSemesterWindow(second), nextBreak: second }
+    : { thisSemester: w, nextSemester: second, nextBreak: nextSemesterWindow(second) }
+}
+
+function bucketByDate(dueDate, today) {
+  const { thisSemester, nextSemester, nextBreak } = upcomingWindows(today)
+  const d = new Date(dueDate)
+  if (d >= thisSemester.start && d <= thisSemester.end) return 'This semester'
+  if (d >= nextSemester.start && d <= nextSemester.end) return 'Next semester'
+  if (d >= nextBreak.start && d <= nextBreak.end) return 'Next break'
+  return null // caller falls back to the undated rule using dueDate's year
+}
+
+export function bucketActivities(roadmap, profile, today = new Date()) {
+  const currentYear = today.getFullYear()
+  const graduationYear = Number(profile.graduationYear)
+  const buckets = Object.fromEntries(SECTION_NAMES.map((name) => [name, []]))
+
+  roadmap.forEach((activity) => {
+    if (activity.period === 'Before graduating') return
+    if (activity.colour === 'current' || activity.colour === 'missed') {
+      buckets.Now.push(activity)
+      return
+    }
+    if (SECTION_NAMES.includes(activity.period)) {
+      buckets[activity.period].push(activity)
+      return
+    }
+    if (activity.dueDate) {
+      const byDate = bucketByDate(activity.dueDate, today)
+      if (byDate) {
+        buckets[byDate].push(activity)
+        return
+      }
+      const dueYear = new Date(activity.dueDate).getFullYear()
+      buckets[dueYear < graduationYear ? 'Before final year' : 'Graduate application period'].push(activity)
+      return
+    }
+    const y = activity.periodYear
+    if (y === currentYear) buckets['This semester'].push(activity)
+    else if (y === currentYear + 1) buckets['Next semester'].push(activity)
+    else if (y !== null && y < graduationYear) buckets['Before final year'].push(activity)
+    else buckets['Graduate application period'].push(activity)
+  })
+
+  return buckets
+}
+
 export function computeStats(roadmap) {
   const relevant = roadmap.filter((a) => a.period !== 'Before graduating')
   const byCategory = {}

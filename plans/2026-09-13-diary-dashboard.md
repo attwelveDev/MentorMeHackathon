@@ -291,7 +291,7 @@ Alternatives considered are in `specs/2026-09-13-diary-dashboard.md` §2
     })
 
     it('buckets an undated upcoming activity at or after graduationYear into "Graduate application period"', () => {
-      const roadmap = [{ title: 'Grad task', colour: 'upcoming', period: 'Year 4', periodYear: 2027, dueDate: null }]
+      const roadmap = [{ title: 'Grad task', colour: 'upcoming', period: 'Year 4', periodYear: 2029, dueDate: null }]
       const result = bucketActivities(roadmap, profile, new Date('2026-03-15'))
       expect(result['Graduate application period'].map((a) => a.title)).toContain('Grad task')
     })
