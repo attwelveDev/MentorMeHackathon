@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getCareerReadinessAnalysis, generateCareerPlan } from './ai'
+import { getCareerReadinessAnalysis, generateCareerPlan, getDiaryFeedback } from './ai'
 
 beforeEach(() => {
   global.fetch = vi.fn().mockResolvedValue({
@@ -42,5 +42,26 @@ describe('generateCareerPlan', () => {
     expect(body.prompt).toContain('Before graduating')
     expect(body.prompt).toContain('Year 1 after graduating')
     expect(body.prompt).toMatch(/already graduated/i)
+  })
+})
+
+describe('getDiaryFeedback', () => {
+  it('sends the activity and entry text and returns the feedback text', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ task: 'diary-feedback', text: 'Great progress, keep it up!' }) })
+    const result = await getDiaryFeedback({ title: 'Apply for internships', category: 'Work experience' }, 'Applied to two internships this week.')
+    expect(result).toBe('Great progress, keep it up!')
+    const [, options] = global.fetch.mock.calls[0]
+    const body = JSON.parse(options.body)
+    expect(body.prompt).toContain('Apply for internships')
+    expect(body.prompt).toContain('Applied to two internships this week.')
+  })
+
+  it('instructs the model not to provide visa, migration, legal, financial, or licensing advice, or guarantee any outcome', async () => {
+    global.fetch.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ task: 'diary-feedback', text: 'ok' }) })
+    await getDiaryFeedback({ title: 'x', category: 'y' }, 'entry')
+    const [, options] = global.fetch.mock.calls[0]
+    const body = JSON.parse(options.body)
+    expect(body.prompt).toMatch(/do not comment on, assess, or provide visa, migration, legal, financial, or licensing advice/i)
+    expect(body.prompt).toMatch(/do not guarantee any employment or migration outcome/i)
   })
 })

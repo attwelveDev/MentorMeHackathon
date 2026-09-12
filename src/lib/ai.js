@@ -78,3 +78,16 @@ Do not include any text outside the JSON object.`
   const { text } = await callGenerate(prompt, 'market-update')
   return text
 }
+
+// Diary: on-request-only feedback on a single diary entry (never called automatically).
+export async function getDiaryFeedback(activity, entryText) {
+  const prompt = `You are a supportive career-guidance assistant for an international student in Australia.
+The student is working on this career-plan activity: "${activity.title}" (category: ${activity.category}).
+Here is their diary entry about their progress: "${entryText}"
+
+Write short (2-4 sentence), encouraging, specific feedback on their progress and a concrete next step they could try.
+Do not comment on, assess, or provide visa, migration, legal, financial, or licensing advice, and do not guarantee any employment or migration outcome.
+Return only the feedback text — no JSON, headers, or additional commentary.`
+  const { text } = await callGenerate(prompt, 'diary-feedback')
+  return text
+}
