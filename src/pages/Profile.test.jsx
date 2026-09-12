@@ -6,6 +6,7 @@ import {
   AU_STATES,
   EMPLOYMENT_ARRANGEMENTS,
   WORK_LOCATION_MODES,
+  WORK_RIGHTS,
 } from '../lib/profileOptions'
 
 const mockNavigate = vi.fn()
@@ -39,6 +40,7 @@ describe('Profile validation', () => {
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Software Developer' } })
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'JavaScript basics' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Internship, 3 months' } })
+    fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({
@@ -100,6 +102,7 @@ describe('Profile work-preference fields', () => {
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Registered Nurse' } })
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Patient care basics' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Aged care volunteering' } })
+    fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
   })
@@ -113,6 +116,7 @@ function fillRequiredExcept(omit) {
     targetOccupation: 'Carpenter',
     skills: 'Basic hand and power tool use',
     experience: 'Work placement, 2 weeks',
+    workRights: 'no-restriction',
   }
   render(<Profile />)
   const labelFor = {
@@ -122,6 +126,7 @@ function fillRequiredExcept(omit) {
     targetOccupation: /target occupation/i,
     skills: /current skills/i,
     experience: /employment or volunteer experience/i,
+    workRights: /work rights/i,
   }
   Object.entries(values).forEach(([key, val]) => {
     if (key === omit) return
@@ -189,6 +194,7 @@ describe('Profile qualification "none yet" checkbox', () => {
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
     fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
     fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'None yet' } })
+    fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'no-restriction' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ qualification: 'No formal qualification yet' }) },
@@ -216,6 +222,49 @@ describe('Profile specialisation "none yet" checkbox', () => {
   it('still allows submission when specialisation is left blank (unaffected by this checkbox)', () => {
     fillRequiredExcept(null)
     expect(mockNavigate).toHaveBeenCalled()
+  })
+})
+
+describe('Profile work rights field', () => {
+  it('renders Work rights as a select with the configured options', () => {
+    render(<Profile />)
+    const select = screen.getByLabelText(/work rights/i)
+    expect(select.tagName).toBe('SELECT')
+    WORK_RIGHTS.forEach((opt) => {
+      expect(screen.getByRole('option', { name: opt.label })).toBeInTheDocument()
+    })
+  })
+
+  it('renders the self-reported disclaimer near the field', () => {
+    render(<Profile />)
+    expect(screen.getByText(/self-reported.*doesn't verify this or provide visa\/migration advice/i)).toBeInTheDocument()
+  })
+
+  it('blocks submission and shows an error when Work rights is left unselected', () => {
+    render(<Profile />)
+    fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
+    fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+    fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
+    fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
+    fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
+    fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Work placement' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).not.toHaveBeenCalled()
+  })
+
+  it('allows submission when "Prefer not to say" is selected, alongside the other required fields', () => {
+    render(<Profile />)
+    fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
+    fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
+    fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
+    fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
+    fireEvent.change(screen.getByLabelText(/current skills/i), { target: { value: 'Basic tool use' } })
+    fireEvent.change(screen.getByLabelText(/employment or volunteer experience/i), { target: { value: 'Work placement' } })
+    fireEvent.change(screen.getByLabelText(/work rights/i), { target: { value: 'prefer-not-to-say' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
+      state: { profile: expect.objectContaining({ workRights: 'prefer-not-to-say' }) },
+    })
   })
 })
 

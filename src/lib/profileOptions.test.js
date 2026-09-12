@@ -5,6 +5,7 @@ import {
   AU_STATES,
   EMPLOYMENT_ARRANGEMENTS,
   WORK_LOCATION_MODES,
+  WORK_RIGHTS,
 } from './profileOptions'
 
 describe('profileOptions', () => {
@@ -44,6 +45,15 @@ describe('profileOptions', () => {
       { value: 'remote', label: 'Remote' },
       { value: 'hybrid', label: 'Hybrid' },
       { value: 'no-preference', label: 'No preference' },
+    ])
+  })
+  it('exports 5 work rights options', () => {
+    expect(WORK_RIGHTS).toEqual([
+      { value: 'no-restriction', label: 'No restriction on hours' },
+      { value: 'limited-during-study', label: 'Limited hours during study periods' },
+      { value: 'not-currently-able', label: 'Not currently able to work' },
+      { value: 'not-sure', label: 'Not sure' },
+      { value: 'prefer-not-to-say', label: 'Prefer not to say' },
     ])
   })
 })

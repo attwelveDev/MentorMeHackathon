@@ -6,12 +6,13 @@ import {
   AU_STATES,
   EMPLOYMENT_ARRANGEMENTS,
   WORK_LOCATION_MODES,
+  WORK_RIGHTS,
   NO_QUALIFICATION_YET,
   NO_SPECIALISATION,
 } from '../lib/profileOptions'
 
 // Screen 2: Student profile
-const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience']
+const REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'targetOccupation', 'skills', 'experience', 'workRights']
 
 export default function Profile() {
   const navigate = useNavigate()
@@ -30,6 +31,7 @@ export default function Profile() {
     otherPreferences: '',
     licences: '',
     state: '',
+    workRights: '',
   })
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
@@ -139,6 +141,19 @@ export default function Profile() {
           options={AU_STATES}
           error={fieldErrors.state}
         />
+        <Field
+          id="workRights"
+          label="Work rights *"
+          value={form.workRights}
+          onChange={(v) => updateField('workRights', v)}
+          type="select"
+          options={WORK_RIGHTS}
+          error={fieldErrors.workRights}
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Self-reported — CareerCompass AU doesn't verify this or provide
+          visa/migration advice.
+        </p>
         <Field
           id="skills"
           label="Current skills *"

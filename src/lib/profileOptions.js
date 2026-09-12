@@ -39,3 +39,11 @@ export const WORK_LOCATION_MODES = [
   { value: 'hybrid', label: 'Hybrid' },
   { value: 'no-preference', label: 'No preference' },
 ]
+
+export const WORK_RIGHTS = [
+  { value: 'no-restriction', label: 'No restriction on hours' },
+  { value: 'limited-during-study', label: 'Limited hours during study periods' },
+  { value: 'not-currently-able', label: 'Not currently able to work' },
+  { value: 'not-sure', label: 'Not sure' },
+  { value: 'prefer-not-to-say', label: 'Prefer not to say' },
+]
