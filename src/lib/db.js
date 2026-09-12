@@ -48,3 +48,33 @@ export async function deleteActivity(activityId) {
   const { error } = await supabase.from('activities').delete().eq('id', activityId)
   if (error) throw new Error(error.message)
 }
+
+export async function getProfile(userId) {
+  const { data } = await supabase.from('profiles').select('*').eq('user_id', userId).maybeSingle()
+  return data ?? null
+}
+
+export async function saveProfile(userId, profile) {
+  const row = {
+    user_id: userId,
+    qualification: profile.qualification || null,
+    specialisation: profile.specialisation || null,
+    education_sector: profile.educationSector || null,
+    study_stage: profile.studyStage || null,
+    graduation_year: profile.graduationYear || null,
+    course_length_years: profile.courseLengthYears ? Number(profile.courseLengthYears) : null,
+    target_occupation: profile.targetOccupation || null,
+    state: profile.state || null,
+    work_rights: profile.workRights || null,
+    skills: profile.skills || null,
+    certifications: profile.certifications || null,
+    experience: profile.experience || null,
+    employment_arrangement: profile.employmentArrangement || null,
+    work_location_mode: profile.workLocationMode || null,
+    other_preferences: profile.otherPreferences || null,
+    licences: profile.licences || null,
+    updated_at: new Date().toISOString(),
+  }
+  const { error } = await supabase.from('profiles').upsert(row)
+  if (error) throw new Error(error.message)
+}

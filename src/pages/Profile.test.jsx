@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import {
   EDUCATION_SECTORS,
   STUDY_STAGES,
@@ -15,10 +15,23 @@ vi.mock('react-router-dom', async (importOriginal) => {
   return { ...actual, useNavigate: () => mockNavigate }
 })
 
+const mockUseAuth = vi.fn()
+vi.mock('../lib/auth', () => ({ useAuth: () => mockUseAuth() }))
+
+vi.mock('../lib/localPlan', () => ({ loadGuestPlan: vi.fn(), saveGuestPlan: vi.fn() }))
+vi.mock('../lib/db', () => ({ getProfile: vi.fn(), saveProfile: vi.fn() }))
+
+import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
+import { getProfile, saveProfile } from '../lib/db'
 import Profile from './Profile'
 
 beforeEach(() => {
   mockNavigate.mockClear()
+  mockUseAuth.mockReset().mockReturnValue({ user: null })
+  loadGuestPlan.mockReset().mockReturnValue(null)
+  saveGuestPlan.mockReset().mockReturnValue({ ok: true })
+  getProfile.mockReset().mockResolvedValue(null)
+  saveProfile.mockReset().mockResolvedValue(undefined)
 })
 
 describe('Profile validation', () => {
@@ -341,6 +354,59 @@ describe('Profile work rights field', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/analysis', {
       state: { profile: expect.objectContaining({ workRights: 'prefer-not-to-say' }) },
     })
+  })
+})
+
+describe('Profile persistence', () => {
+  it('prefills the form from a guest\'s previously-saved profile in localStorage', async () => {
+    loadGuestPlan.mockReturnValue({
+      profile: { qualification: 'Bachelor of IT', targetOccupation: 'Data Analyst' },
+      activities: [],
+    })
+    render(<Profile />)
+    await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('Bachelor of IT'))
+    expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Data Analyst')
+  })
+
+  it('saves the profile to localStorage for a guest on submit', () => {
+    render(<Profile />)
+    fillOtherRequiredFields()
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(saveGuestPlan).toHaveBeenCalledWith(expect.objectContaining({ targetOccupation: 'Carpenter' }), [])
+    expect(mockNavigate).toHaveBeenCalled()
+  })
+
+  it('prefills the form from a signed-in user\'s saved Supabase profile', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    getProfile.mockResolvedValue({
+      qualification: 'Diploma of Early Childhood Education',
+      target_occupation: 'Early Childhood Educator',
+    })
+    render(<Profile />)
+    await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('Diploma of Early Childhood Education'))
+    expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Early Childhood Educator')
+  })
+
+  it('saves the profile to Supabase for a signed-in user on submit, then navigates', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    render(<Profile />)
+    fillOtherRequiredFields()
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    await waitFor(() => expect(saveProfile).toHaveBeenCalledWith('u1', expect.objectContaining({ targetOccupation: 'Carpenter' })))
+    await waitFor(() => expect(mockNavigate).toHaveBeenCalled())
+  })
+
+  it('shows an error and does not navigate when saving a signed-in user\'s profile fails', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    saveProfile.mockRejectedValue(new Error('boom'))
+    render(<Profile />)
+    fillOtherRequiredFields()
+    fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
+    fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
+    expect(await screen.findByText(/we could not save your profile/i)).toBeInTheDocument()
+    expect(mockNavigate).not.toHaveBeenCalled()
   })
 })
 

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   EDUCATION_SECTORS,
@@ -10,6 +10,9 @@ import {
   NO_QUALIFICATION_YET,
   NO_SPECIALISATION,
 } from '../lib/profileOptions'
+import { useAuth } from '../lib/auth'
+import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
+import { getProfile, saveProfile } from '../lib/db'
 
 // Screen 2: Student profile
 const BASE_REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'graduationYear', 'targetOccupation', 'skills', 'experience', 'workRights']
@@ -24,8 +27,30 @@ function isValidCourseLength(value) {
   return /^[1-6]$/.test(value.trim())
 }
 
+function mapProfileRow(row) {
+  return {
+    qualification: row.qualification ?? '',
+    specialisation: row.specialisation ?? '',
+    educationSector: row.education_sector ?? '',
+    studyStage: row.study_stage ?? '',
+    graduationYear: row.graduation_year ?? '',
+    courseLengthYears: row.course_length_years != null ? String(row.course_length_years) : '',
+    targetOccupation: row.target_occupation ?? '',
+    state: row.state ?? '',
+    workRights: row.work_rights ?? '',
+    skills: row.skills ?? '',
+    certifications: row.certifications ?? '',
+    experience: row.experience ?? '',
+    employmentArrangement: row.employment_arrangement ?? '',
+    workLocationMode: row.work_location_mode ?? '',
+    otherPreferences: row.other_preferences ?? '',
+    licences: row.licences ?? '',
+  }
+}
+
 export default function Profile() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [form, setForm] = useState({
     qualification: '',
     specialisation: '',
@@ -47,11 +72,30 @@ export default function Profile() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
 
+  useEffect(() => {
+    let cancelled = false
+    async function loadExisting() {
+      if (user) {
+        try {
+          const existing = await getProfile(user.id)
+          if (!cancelled && existing) setForm((prev) => ({ ...prev, ...mapProfileRow(existing) }))
+        } catch {
+          // best-effort prefill; leave the form blank if it fails
+        }
+        return
+      }
+      const guest = loadGuestPlan()
+      if (!cancelled && guest?.profile) setForm((prev) => ({ ...prev, ...guest.profile }))
+    }
+    loadExisting()
+    return () => { cancelled = true }
+  }, [user])
+
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault()
     const missing = getRequiredFields(form.studyStage).filter((field) => !form[field]?.trim())
     const errors = Object.fromEntries(missing.map((f) => [f, 'This field is required.']))
@@ -65,7 +109,19 @@ export default function Profile() {
     }
     setFieldErrors({})
     setFormError(null)
-    // TODO: persist profile to Supabase, then call generateCareerPlan()
+
+    if (user) {
+      try {
+        await saveProfile(user.id, form)
+      } catch {
+        setFormError('We could not save your profile. Please try again.')
+        return
+      }
+    } else {
+      const existing = loadGuestPlan()
+      saveGuestPlan(form, existing?.activities ?? [])
+    }
+
     navigate('/analysis', { state: { profile: form } })
   }
 

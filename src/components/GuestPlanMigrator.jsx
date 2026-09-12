@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { loadGuestPlan, clearGuestPlan } from '../lib/localPlan'
-import { getPlanWithActivities, createPlanWithActivities } from '../lib/db'
+import { getPlanWithActivities, createPlanWithActivities, saveProfile } from '../lib/db'
 
 // Runs once a session appears: if this browser has a guest plan saved
 // locally, moves it into the new/existing account's Supabase plan instead
@@ -25,6 +25,9 @@ export default function GuestPlanMigrator() {
           // already has a real saved plan - the local one is stale, drop it
           clearGuestPlan()
           return
+        }
+        if (guest.profile) {
+          await saveProfile(user.id, guest.profile)
         }
         await createPlanWithActivities(user.id, guest.profile?.targetOccupation, guest.activities)
         if (cancelled) return

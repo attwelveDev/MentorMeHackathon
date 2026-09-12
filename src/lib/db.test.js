@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const mockFrom = vi.fn()
 vi.mock('./supabaseClient', () => ({ supabase: { from: (...args) => mockFrom(...args) } }))
-import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity } from './db'
+import { getPlanWithActivities, createPlanWithActivities, updateActivityStatus, setPlanAccepted, deleteActivity, getProfile, saveProfile } from './db'
 
 beforeEach(() => { mockFrom.mockReset() })
 
@@ -10,7 +10,7 @@ function chain(result) {
   const builder = {
     select: () => builder, eq: () => builder, order: () => builder,
     limit: () => builder, single: () => Promise.resolve(result), maybeSingle: () => Promise.resolve(result),
-    insert: () => builder, update: () => builder, delete: () => builder,
+    insert: () => builder, update: () => builder, delete: () => builder, upsert: () => builder,
     then: (resolve, reject) => Promise.resolve(result).then(resolve, reject),
   }
   return builder
@@ -65,5 +65,45 @@ describe('updateActivityStatus / setPlanAccepted', () => {
   it('deleteActivity throws with the underlying error message on failure', async () => {
     mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
     await expect(deleteActivity('a1')).rejects.toThrow('boom')
+  })
+})
+
+describe('getProfile / saveProfile', () => {
+  it('getProfile returns null when the user has no saved profile', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: null, error: null }))
+    expect(await getProfile('u1')).toBeNull()
+  })
+
+  it('getProfile returns the saved row when present', async () => {
+    mockFrom.mockReturnValueOnce(chain({ data: { user_id: 'u1', target_occupation: 'Data Analyst' }, error: null }))
+    expect(await getProfile('u1')).toEqual({ user_id: 'u1', target_occupation: 'Data Analyst' })
+  })
+
+  it('saveProfile upserts the profile, mapping camelCase fields to snake_case columns', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: null }))
+    await saveProfile('u1', {
+      qualification: 'Bachelor of IT',
+      specialisation: '',
+      educationSector: 'higher-education',
+      studyStage: 'midway',
+      graduationYear: '2027',
+      courseLengthYears: '4',
+      targetOccupation: 'Data Analyst',
+      state: '',
+      workRights: 'citizen-or-pr',
+      skills: 'SQL',
+      certifications: '',
+      experience: 'Retail',
+      employmentArrangement: '',
+      workLocationMode: '',
+      otherPreferences: '',
+      licences: '',
+    })
+    expect(mockFrom).toHaveBeenCalledWith('profiles')
+  })
+
+  it('saveProfile throws with the underlying error message on failure', async () => {
+    mockFrom.mockReturnValueOnce(chain({ error: { message: 'boom' } }))
+    await expect(saveProfile('u1', {})).rejects.toThrow('boom')
   })
 })

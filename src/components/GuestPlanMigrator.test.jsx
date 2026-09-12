@@ -12,10 +12,10 @@ vi.mock('react-router-dom', async (importOriginal) => {
 })
 
 vi.mock('../lib/localPlan', () => ({ loadGuestPlan: vi.fn(), clearGuestPlan: vi.fn() }))
-vi.mock('../lib/db', () => ({ getPlanWithActivities: vi.fn(), createPlanWithActivities: vi.fn() }))
+vi.mock('../lib/db', () => ({ getPlanWithActivities: vi.fn(), createPlanWithActivities: vi.fn(), saveProfile: vi.fn() }))
 
 import { loadGuestPlan, clearGuestPlan } from '../lib/localPlan'
-import { getPlanWithActivities, createPlanWithActivities } from '../lib/db'
+import { getPlanWithActivities, createPlanWithActivities, saveProfile } from '../lib/db'
 import GuestPlanMigrator from './GuestPlanMigrator'
 
 const guestPlan = {
@@ -34,6 +34,7 @@ beforeEach(() => {
   clearGuestPlan.mockReset()
   getPlanWithActivities.mockReset()
   createPlanWithActivities.mockReset()
+  saveProfile.mockReset().mockResolvedValue(undefined)
 })
 
 describe('GuestPlanMigrator', () => {
@@ -55,12 +56,13 @@ describe('GuestPlanMigrator', () => {
     expect(createPlanWithActivities).not.toHaveBeenCalled()
   })
 
-  it('migrates the guest plan to Supabase, clears it, and navigates to /plan when the user has no existing plan', async () => {
+  it('migrates the guest plan and profile to Supabase, clears it, and navigates to /plan when the user has no existing plan', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     loadGuestPlan.mockReturnValue(guestPlan)
     getPlanWithActivities.mockResolvedValue(null)
     createPlanWithActivities.mockResolvedValue({ plan: { id: 'p1' }, activities: [] })
     renderMigrator()
+    await waitFor(() => expect(saveProfile).toHaveBeenCalledWith('u1', guestPlan.profile))
     await waitFor(() => expect(createPlanWithActivities).toHaveBeenCalledWith('u1', 'Data Analyst', guestPlan.activities))
     await waitFor(() => expect(clearGuestPlan).toHaveBeenCalled())
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith('/plan'))
