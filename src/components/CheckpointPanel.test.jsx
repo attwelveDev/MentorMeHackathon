@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, act } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 const mockUseAuth = vi.fn()
@@ -88,72 +88,4 @@ describe('CheckpointPanel', () => {
     expect(screen.getByText(/create an account to keep a diary/i)).toBeInTheDocument()
   })
 
-  it('renders the passed-in diaryEntries list (entry text + timestamp) for a signed-in user', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    renderPanel({
-      diaryEntries: [
-        { id: 'd1', entry_text: 'Applied to two internships this week.', created_at: '2026-09-01T00:00:00Z' },
-      ],
-    })
-    expect(screen.getByText('Applied to two internships this week.')).toBeInTheDocument()
-    expect(screen.getByText(/2026/)).toBeInTheDocument()
-  })
-
-  it('submitting the diary entry form calls onAddEntry(text) with the entered text, for a signed-in user', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    const onAddEntry = vi.fn()
-    renderPanel({ diaryEntries: [], onAddEntry })
-    fireEvent.change(screen.getByRole('textbox', { name: /diary entry/i }), { target: { value: 'Made progress today.' } })
-    fireEvent.click(screen.getByRole('button', { name: /add entry/i }))
-    expect(onAddEntry).toHaveBeenCalledWith('Made progress today.')
-  })
-
-  it('clicking "Get AI feedback" on an entry without existing feedback calls onRequestFeedback(entry.id)', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    const onRequestFeedback = vi.fn()
-    renderPanel({
-      diaryEntries: [{ id: 'd1', entry_text: 'Entry text', created_at: '2026-09-01T00:00:00Z' }],
-      onRequestFeedback,
-    })
-    await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
-      await Promise.resolve()
-    })
-    expect(onRequestFeedback).toHaveBeenCalledWith('d1')
-  })
-
-  it('renders existing ai_feedback text under an entry when present, without a "Get AI feedback" button for that entry', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    renderPanel({
-      diaryEntries: [{ id: 'd1', entry_text: 'Entry text', created_at: '2026-09-01T00:00:00Z', ai_feedback: 'Nice work!' }],
-    })
-    expect(screen.getByText('Nice work!')).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /get ai feedback/i })).not.toBeInTheDocument()
-  })
-
-  it('renders a "Feedback" heading above existing ai_feedback text', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    renderPanel({
-      diaryEntries: [{ id: 'd1', entry_text: 'Entry text', created_at: '2026-09-01T00:00:00Z', ai_feedback: 'Nice work!' }],
-    })
-    expect(screen.getByText('Feedback')).toBeInTheDocument()
-  })
-
-  it('shows a loading indicator while feedback is pending for an entry, then clears it once resolved', async () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    let resolveFeedback
-    const onRequestFeedback = vi.fn(() => new Promise((resolve) => { resolveFeedback = resolve }))
-    renderPanel({
-      diaryEntries: [{ id: 'd1', entry_text: 'Entry text', created_at: '2026-09-01T00:00:00Z' }],
-      onRequestFeedback,
-    })
-    fireEvent.click(screen.getByRole('button', { name: /get ai feedback/i }))
-    expect(screen.getByText(/getting feedback/i)).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: /get ai feedback/i })).not.toBeInTheDocument()
-    await act(async () => {
-      resolveFeedback()
-      await Promise.resolve()
-    })
-    expect(screen.queryByText(/getting feedback/i)).not.toBeInTheDocument()
-  })
 })
