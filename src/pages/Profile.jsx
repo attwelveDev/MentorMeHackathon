@@ -12,7 +12,7 @@ import {
 } from '../lib/profileOptions'
 import { useAuth } from '../lib/auth'
 import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
-import { getProfile, saveProfile } from '../lib/db'
+import { getProfile, saveProfile, getPlanWithActivities } from '../lib/db'
 import NotebookFrame, { StickyNote, SquiggleIcon, DeskIllustration, ArrowRightIcon } from '../components/NotebookFrame'
 
 // Screen 2: Student profile
@@ -73,6 +73,7 @@ export default function Profile() {
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
   const [loadingProfile, setLoadingProfile] = useState(Boolean(user))
+  const [hasPlan, setHasPlan] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -80,8 +81,13 @@ export default function Profile() {
       if (user) {
         setLoadingProfile(true)
         try {
-          const existing = await getProfile(user.id)
-          if (!cancelled && existing) setForm((prev) => ({ ...prev, ...mapProfileRow(existing) }))
+          const [existing, planData] = await Promise.all([
+            getProfile(user.id),
+            getPlanWithActivities(user.id),
+          ])
+          if (cancelled) return
+          if (existing) setForm((prev) => ({ ...prev, ...mapProfileRow(existing) }))
+          setHasPlan(Boolean(planData?.plan))
         } catch {
           // best-effort prefill; leave the form blank if it fails
         } finally {
@@ -90,6 +96,7 @@ export default function Profile() {
         return
       }
       setLoadingProfile(false)
+      setHasPlan(false)
       const guest = loadGuestPlan()
       if (!cancelled && guest?.profile) setForm((prev) => ({ ...prev, ...guest.profile }))
     }
@@ -149,8 +156,9 @@ export default function Profile() {
             <SquiggleIcon className="absolute -right-1 -top-2 h-4 w-6 text-slate-400" />
           </div>
           <p className="font-diary-body mt-3 text-sm text-slate-500 dark:text-slate-400">
-            Tell us about your qualification and goals so we can sketch out a plan that actually fits you.
-            Fields marked with * are required.
+            {hasPlan
+              ? 'Keep this up to date so your existing plan stays on point as things change. Fields marked with * are required.'
+              : 'Tell us about your qualification and goals so we can sketch out a plan that actually fits you. Fields marked with * are required.'}
           </p>
 
           <div className="relative mt-8">
@@ -170,7 +178,9 @@ export default function Profile() {
         <>
           <h2 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">About you</h2>
           <p className="font-diary-body mt-1 text-sm text-slate-500 dark:text-slate-400">
-            This shapes the roadmap we build for you next.
+            {hasPlan
+              ? 'Update any of these and re-create your plan to refresh your existing roadmap.'
+              : 'This shapes the roadmap we build for you next.'}
           </p>
 
           {formError && (

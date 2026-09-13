@@ -20,10 +20,10 @@ const mockUseAuth = vi.fn()
 vi.mock('../lib/auth', () => ({ useAuth: () => mockUseAuth() }))
 
 vi.mock('../lib/localPlan', () => ({ loadGuestPlan: vi.fn(), saveGuestPlan: vi.fn() }))
-vi.mock('../lib/db', () => ({ getProfile: vi.fn(), saveProfile: vi.fn() }))
+vi.mock('../lib/db', () => ({ getProfile: vi.fn(), saveProfile: vi.fn(), getPlanWithActivities: vi.fn() }))
 
 import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
-import { getProfile, saveProfile } from '../lib/db'
+import { getProfile, saveProfile, getPlanWithActivities } from '../lib/db'
 import Profile from './Profile'
 
 beforeEach(() => {
@@ -33,6 +33,7 @@ beforeEach(() => {
   saveGuestPlan.mockReset().mockReturnValue({ ok: true })
   getProfile.mockReset().mockResolvedValue(null)
   saveProfile.mockReset().mockResolvedValue(undefined)
+  getPlanWithActivities.mockReset().mockResolvedValue(null)
 })
 
 describe('Profile validation', () => {
@@ -406,6 +407,30 @@ describe('Profile persistence', () => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
     await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('Diploma of Early Childhood Education'))
     expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Early Childhood Educator')
+  })
+
+  it('shows plan-aware descriptions for a signed-in user who already has a plan', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    getPlanWithActivities.mockResolvedValue({ plan: { id: 'p1' }, activities: [] })
+    render(<MemoryRouter><Profile /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toBeInTheDocument())
+    expect(screen.getByText(/keep this up to date so your existing plan stays on point/i)).toBeInTheDocument()
+    expect(screen.getByText(/re-create your plan to refresh your existing roadmap/i)).toBeInTheDocument()
+  })
+
+  it('shows the first-time descriptions for a signed-in user without a plan yet', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    getPlanWithActivities.mockResolvedValue(null)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
+    await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toBeInTheDocument())
+    expect(screen.getByText(/sketch out a plan that actually fits you/i)).toBeInTheDocument()
+    expect(screen.getByText(/this shapes the roadmap we build for you next/i)).toBeInTheDocument()
+  })
+
+  it('shows the first-time descriptions for a guest', () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>)
+    expect(screen.getByText(/sketch out a plan that actually fits you/i)).toBeInTheDocument()
+    expect(screen.getByText(/this shapes the roadmap we build for you next/i)).toBeInTheDocument()
   })
 
   it('saves the profile to Supabase for a signed-in user on submit, then navigates', async () => {
