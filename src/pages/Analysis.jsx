@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { getCareerReadinessAnalysis } from '../lib/ai'
+import { getCached, setCached } from '../lib/pageCache'
 import NotebookFrame from '../components/NotebookFrame'
 
 const GOAL_COLOURS = { background: '#3b3163', text: '#f5f1e8' }
@@ -11,7 +12,9 @@ export default function Analysis() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const profile = state?.profile
-  const [analysis, setAnalysis] = useState(null)
+  const cacheKey = profile ? `analysis:${JSON.stringify(profile)}` : null
+  const cached = cacheKey ? getCached(cacheKey) : null
+  const [analysis, setAnalysis] = useState(cached ?? null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
@@ -20,6 +23,11 @@ export default function Analysis() {
       navigate('/profile')
       return
     }
+    // Already generated this exact profile's analysis earlier this session
+    // (e.g. navigating away and back) — reuse it instead of calling the AI
+    // and flashing "Analysing your profile…" again.
+    if (cached) return
+
     let cancelled = false
 
     async function run() {
@@ -34,7 +42,11 @@ export default function Analysis() {
           break
         }
         try {
-          if (!cancelled) setAnalysis(JSON.parse(text))
+          const parsed = JSON.parse(text)
+          if (!cancelled) {
+            setAnalysis(parsed)
+            setCached(cacheKey, parsed)
+          }
           break
         } catch {
           if (attempt === MAX_PARSE_ATTEMPTS && !cancelled) {
@@ -47,6 +59,7 @@ export default function Analysis() {
 
     run()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile, navigate])
 
   if (loading) return <Centered>Analysing your profile…</Centered>
