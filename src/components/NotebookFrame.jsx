@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 
 const TABS = [
@@ -14,6 +14,13 @@ const TABS = [
 // notes. `leftPage` and `rightPage` are each page's own content.
 export default function NotebookFrame({ leftPage, rightPage, stickyNotes = [] }) {
   const { user, signOut } = useAuth()
+  const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    navigate('/')
+  }
+
   return (
     <div className="diary-paper min-h-screen py-10">
       <div className="mx-auto flex max-w-5xl gap-0 px-4">
@@ -54,7 +61,7 @@ export default function NotebookFrame({ leftPage, rightPage, stickyNotes = [] })
             {user && (
               <button
                 type="button"
-                onClick={signOut}
+                onClick={handleSignOut}
                 className="font-diary-title relative mt-8 block w-full px-3 text-left text-sm text-slate-500 hover:text-slate-800"
               >
                 Sign out
