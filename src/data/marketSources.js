@@ -73,4 +73,74 @@ export const marketSources = [
     publishedDate: '2026-07-16',
     retrievedDate: '2026-09-13',
   },
+  {
+    id: 'software-engineer-nsw-jsa-2026',
+    sourceText:
+      'New South Wales accounts for 42.2% of employed Software Engineers (ANZSCO 261313) nationally, the largest state share of any state or territory. Nationally there are 55,200 people employed as Software Engineers, with a part-time share of 8% and a female share of 16%, both well below the all-occupations averages. Source: Jobs and Skills Australia, Software Engineers occupation profile, based on ABS Labour Force Survey, Detailed, February 2026.',
+    occupation: 'Software Engineer',
+    state: 'NSW',
+    source: 'Jobs and Skills Australia',
+    publishedDate: '2026-02-01',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-national-techcouncil-2026',
+    sourceText:
+      'Australia\'s tech workforce reached approximately 977,000 people by November 2025, made up of 424,000 people in direct tech roles and 553,000 in technical roles embedded in other industries. Software engineering remained the largest technical occupational category, with software engineering roles growing 7% year-on-year even as employers adopted generative AI tools; the Tech Council\'s analysis found no discernible evidence of a differential decline in early-career technical employment since generative AI became widely available in late 2022. Source: Tech Council of Australia, "Tech Jobs Report 2026", 13 August 2026.',
+    occupation: 'Software Engineer',
+    state: 'National',
+    source: 'Tech Council of Australia',
+    publishedDate: '2026-08-13',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-national-acs-digitalpulse-2026',
+    sourceText:
+      'Australia\'s technology workforce shrank by 0.3% in 2025 to around 967,000 workers, the first year-on-year decrease recorded in the 12 years the Australian Computer Society (ACS) has tracked the sector. Roles in ICT sales, ICT trades and ICT administration/logistics support declined, while technical, professional and management tech roles grew. The report projects Australia will need a further 259,000 technology workers by 2035 to meet demand. Source: Australian Computer Society & Deloitte Access Economics, "Australia\'s Digital Pulse 2026" (12th annual report), 11 August 2026.',
+    occupation: 'Software Engineer',
+    state: 'National',
+    source: 'Australian Computer Society (ACS) / Deloitte Access Economics',
+    publishedDate: '2026-08-11',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-nsw-skillslist-2025',
+    sourceText:
+      'Software and Applications Programmers (ANZSCO unit group 2613, which includes Software Engineers, ANZSCO 261313) is one of the ICT unit groups included on the New South Wales Skills List for both the Skilled Nominated (subclass 190) and Skilled Work Regional (subclass 491) visas for the 2025-26 program year. The NSW Government notes its skills lists operate at the ANZSCO unit-group level and that not all occupations within a listed unit group are eligible for nomination. NSW opened its subclass 190 invitation rounds for the 2025-26 program year on 20 October 2025. Source: NSW Government (Investment NSW), "NSW Skills Lists", nsw.gov.au, effective for the 2025-26 program year (opened 20 October 2025).',
+    occupation: 'Software Engineer',
+    state: 'NSW',
+    source: 'NSW Government (Investment NSW)',
+    publishedDate: '2025-10-20',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-national-acs-pathways-2026',
+    sourceText:
+      'Around 40% of people who entered the Australian tech workforce over the past five years came through non-traditional pathways rather than a university degree: roughly 55,000 through workplace training or upskilling, 44,000 through industry credentials, and 34,000 through self-directed learning. The same report found Year 12 student participation in technology subjects fell to 28% in 2024. Source: Australian Computer Society & Deloitte Access Economics, "Australia\'s Digital Pulse 2026" (12th annual report), 11 August 2026.',
+    occupation: 'Software Engineer',
+    state: 'National',
+    source: 'Australian Computer Society (ACS) / Deloitte Access Economics',
+    publishedDate: '2026-08-11',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-national-techcouncil-regional-2026',
+    sourceText:
+      'Technical (tech) jobs in regional Australia grew 12% over the five years to November 2025, more than twice the growth rate recorded in major cities over the same period, pointing to growing technology employment opportunities outside Sydney and other capital cities. Source: Tech Council of Australia, "Tech Jobs Report 2026", 13 August 2026.',
+    occupation: 'Software Engineer',
+    state: 'National',
+    source: 'Tech Council of Australia',
+    publishedDate: '2026-08-13',
+    retrievedDate: '2026-09-13',
+  },
+  {
+    id: 'software-engineer-national-jsa-industry-2026',
+    sourceText:
+      'Software Engineers most commonly work in the Professional, Scientific and Technical Services, Financial and Insurance Services, and Information Media and Telecommunications industries. Professional, Scientific and Technical Services, the largest employing industry for the occupation, has median weekly earnings of $2,071, well above the all-industries median of $1,741. Source: Jobs and Skills Australia, Software Engineers occupation profile and Professional, Scientific and Technical Services industry profile, based on ABS Labour Force Survey, Detailed, February 2026.',
+    occupation: 'Software Engineer',
+    state: 'National',
+    source: 'Jobs and Skills Australia',
+    publishedDate: '2026-02-01',
+    retrievedDate: '2026-09-13',
+  },
 ]
