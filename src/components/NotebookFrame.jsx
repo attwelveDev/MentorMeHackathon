@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 
 const TABS = [
   { to: '/diary', label: 'Diary', bg: '#fef3c7' },
@@ -12,6 +13,7 @@ const TABS = [
 // cover behind a tab-holder column and a two-page spread, with margin sticky
 // notes. `leftPage` and `rightPage` are each page's own content.
 export default function NotebookFrame({ leftPage, rightPage, stickyNotes = [] }) {
+  const { user, signOut } = useAuth()
   return (
     <div className="diary-paper min-h-screen py-10">
       <div className="mx-auto flex max-w-5xl gap-0 px-4">
@@ -48,6 +50,15 @@ export default function NotebookFrame({ leftPage, rightPage, stickyNotes = [] })
                   {label}
                 </span>
               ),
+            )}
+            {user && (
+              <button
+                type="button"
+                onClick={signOut}
+                className="font-diary-title relative mt-8 block w-full px-3 text-left text-sm text-slate-500 hover:text-slate-800"
+              >
+                Sign out
+              </button>
             )}
           </nav>
 

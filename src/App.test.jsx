@@ -9,18 +9,12 @@ vi.mock('./lib/auth', async (importOriginal) => {
 import { MemoryRouter } from 'react-router-dom'
 import App from './App'
 
-describe('App nav auth switch', () => {
-  it('shows Sign up and Log in links when signed out', () => {
+describe('App', () => {
+  it('no longer renders the site-wide top nav header', () => {
     mockUseAuth.mockReturnValue({ user: null, signOut: vi.fn() })
     render(<MemoryRouter><App /></MemoryRouter>)
-    expect(screen.getByRole('link', { name: /sign up/i })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /log in/i })).toBeInTheDocument()
-  })
-
-  it('shows a Sign out action when signed in', () => {
-    mockUseAuth.mockReturnValue({ user: { id: 'u1' }, signOut: vi.fn() })
-    render(<MemoryRouter><App /></MemoryRouter>)
-    expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^careercompass au$/i })).not.toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^updates$/i })).not.toBeInTheDocument()
   })
 
   it('no longer renders a Dashboard nav link', () => {
