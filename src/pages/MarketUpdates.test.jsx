@@ -15,9 +15,11 @@ vi.mock('../data/marketSources', () => ({ marketSources: [
 
 import * as db from '../lib/db'
 import * as ai from '../lib/ai'
+import { clearCache } from '../lib/pageCache'
 import MarketUpdates from './MarketUpdates'
 
 beforeEach(() => {
+  clearCache()
   mockUseAuth.mockReset()
   vi.clearAllMocks()
 })

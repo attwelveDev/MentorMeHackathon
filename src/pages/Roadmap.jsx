@@ -7,6 +7,7 @@ import {
   getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
 } from '../lib/db'
 import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
+import { getCached, setCached } from '../lib/pageCache'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
 import LockedAction from '../components/LockedAction'
 import CheckpointPanel from '../components/CheckpointPanel'
@@ -27,6 +28,7 @@ const COLOURS = {
 }
 
 const GOAL_COLOURS = { background: '#3b3163', text: '#f5f1e8' }
+const MAX_PARSE_ATTEMPTS = 3
 
 function mapDbActivity(row) {
   return {
@@ -46,10 +48,14 @@ export default function Roadmap() {
   const { user } = useAuth()
   const { state } = useLocation()
   const navigate = useNavigate()
-  const [plan, setPlan] = useState(null)
-  const [profile, setProfile] = useState(state?.profile ?? null)
-  const [activities, setActivities] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const cacheKey = user ? `plan:${user.id}` : 'plan:guest'
+  // A freshly-submitted profile (arriving via navigate state) always means
+  // "generate a new plan" and must bypass any stale cached one.
+  const cached = state?.profile ? null : getCached(cacheKey)
+  const [plan, setPlan] = useState(cached?.plan ?? null)
+  const [profile, setProfile] = useState(cached?.profile ?? state?.profile ?? null)
+  const [activities, setActivities] = useState(cached?.activities ?? null)
+  const [loading, setLoading] = useState(!cached)
   const [error, setError] = useState(null)
   const [openKey, setOpenKey] = useState(null)
   const [diaryEntries, setDiaryEntries] = useState([])
@@ -60,6 +66,11 @@ export default function Roadmap() {
   const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
+    // Already have this user's plan cached from an earlier mount this
+    // session — reuse it instead of refetching/regenerating and flashing
+    // the "Building your plan…" screen again.
+    if (cached) return
+
     let cancelled = false
 
     async function loadOrGenerate() {
@@ -71,10 +82,13 @@ export default function Roadmap() {
           const existing = await getPlanWithActivities(user.id)
           if (cancelled) return
           if (existing) {
+            const nextProfile = profile ?? { targetOccupation: existing.plan.target_occupation }
+            const nextActivities = existing.activities.map(mapDbActivity)
             setPlan(existing.plan)
-            setProfile((p) => p ?? { targetOccupation: existing.plan.target_occupation })
-            setActivities(existing.activities.map(mapDbActivity))
+            setProfile(nextProfile)
+            setActivities(nextActivities)
             setLoading(false)
+            setCached(cacheKey, { plan: existing.plan, profile: nextProfile, activities: nextActivities })
             return
           }
         } catch {
@@ -93,6 +107,7 @@ export default function Roadmap() {
             setProfile(guest.profile)
             setActivities(guest.activities)
             setLoading(false)
+            setCached(cacheKey, { plan: null, profile: guest.profile, activities: guest.activities })
             return
           }
         }
@@ -100,25 +115,41 @@ export default function Roadmap() {
         return
       }
 
-      try {
-        const text = await generateCareerPlan(state.profile)
+      for (let attempt = 1; attempt <= MAX_PARSE_ATTEMPTS; attempt++) {
+        let text
+        try {
+          text = await generateCareerPlan(state.profile)
+        } catch {
+          if (!cancelled) setError('We could not generate your plan. Please try again.')
+          break
+        }
         if (cancelled) return
         try {
-          setActivities(JSON.parse(text))
+          const parsed = JSON.parse(text)
+          setActivities(parsed)
+          setCached(cacheKey, { plan: null, profile: state.profile, activities: parsed })
+          break
         } catch {
-          setError('The AI response could not be read. Please try again.')
+          if (attempt === MAX_PARSE_ATTEMPTS && !cancelled) {
+            setError('We could not generate your plan. Please try again.')
+          }
         }
-      } catch {
-        if (!cancelled) setError('We could not generate your plan. Please try again.')
-      } finally {
-        if (!cancelled) setLoading(false)
       }
+      if (!cancelled) setLoading(false)
     }
 
     loadOrGenerate()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Keep the cache in sync with any later edits (status changes, removals,
+  // saving, accepting) so a subsequent remount shows the latest state.
+  useEffect(() => {
+    if (!activities) return
+    setCached(cacheKey, { plan, profile, activities })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, plan, profile, activities])
 
   // Keeps a guest's plan in this browser continuously, not just when they
   // remember to click Save - so navigating away (including to /signup)

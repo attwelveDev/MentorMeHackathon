@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../lib/auth'
 import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
 import { getProfile, saveProfile, getPlanWithActivities } from '../lib/db'
+import { getCached, setCached } from '../lib/pageCache'
 import NotebookFrame, { StickyNote, SquiggleIcon, DeskIllustration, ArrowRightIcon } from '../components/NotebookFrame'
 
 // Screen 2: Student profile
@@ -49,33 +50,40 @@ function mapProfileRow(row) {
   }
 }
 
+const BLANK_FORM = {
+  qualification: '',
+  specialisation: '',
+  educationSector: '',
+  studyStage: '',
+  graduationYear: '',
+  courseLengthYears: '',
+  targetOccupation: '',
+  skills: '',
+  certifications: '',
+  experience: '',
+  employmentArrangement: '',
+  workLocationMode: '',
+  otherPreferences: '',
+  licences: '',
+  state: '',
+  workRights: '',
+}
+
 export default function Profile() {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const [form, setForm] = useState({
-    qualification: '',
-    specialisation: '',
-    educationSector: '',
-    studyStage: '',
-    graduationYear: '',
-    courseLengthYears: '',
-    targetOccupation: '',
-    skills: '',
-    certifications: '',
-    experience: '',
-    employmentArrangement: '',
-    workLocationMode: '',
-    otherPreferences: '',
-    licences: '',
-    state: '',
-    workRights: '',
-  })
+  const cacheKey = user ? `profile:${user.id}` : 'profile:guest'
+  const cached = getCached(cacheKey)
+  const [form, setForm] = useState({ ...BLANK_FORM, ...(cached?.form ?? {}) })
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
-  const [loadingProfile, setLoadingProfile] = useState(Boolean(user))
-  const [hasPlan, setHasPlan] = useState(false)
+  const [loadingProfile, setLoadingProfile] = useState(Boolean(user) && !cached)
+  const [hasPlan, setHasPlan] = useState(cached?.hasPlan ?? false)
 
+  // Once loaded, keep serving this cached copy on remount (e.g. navigating
+  // away and back) instead of refetching and flashing the loading screen.
   useEffect(() => {
+    if (cached) return
     let cancelled = false
     async function loadExisting() {
       if (user) {
@@ -86,8 +94,11 @@ export default function Profile() {
             getPlanWithActivities(user.id),
           ])
           if (cancelled) return
-          if (existing) setForm((prev) => ({ ...prev, ...mapProfileRow(existing) }))
-          setHasPlan(Boolean(planData?.plan))
+          const nextForm = existing ? { ...form, ...mapProfileRow(existing) } : form
+          const nextHasPlan = Boolean(planData?.plan)
+          setForm(nextForm)
+          setHasPlan(nextHasPlan)
+          setCached(cacheKey, { form: nextForm, hasPlan: nextHasPlan })
         } catch {
           // best-effort prefill; leave the form blank if it fails
         } finally {
@@ -98,11 +109,23 @@ export default function Profile() {
       setLoadingProfile(false)
       setHasPlan(false)
       const guest = loadGuestPlan()
-      if (!cancelled && guest?.profile) setForm((prev) => ({ ...prev, ...guest.profile }))
+      if (!cancelled && guest?.profile) {
+        const nextForm = { ...form, ...guest.profile }
+        setForm(nextForm)
+        setCached(cacheKey, { form: nextForm, hasPlan: false })
+      }
     }
     loadExisting()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Persist edits into the cache as the user types, so navigating away and
+  // back (without submitting) restores exactly what they had.
+  useEffect(() => {
+    setCached(cacheKey, { form, hasPlan })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, form, hasPlan])
 
   function updateField(field, value) {
     setForm((prev) => ({ ...prev, [field]: value }))

@@ -32,6 +32,7 @@ import {
   getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
 } from '../lib/db'
 import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
+import { clearCache } from '../lib/pageCache'
 import Roadmap from './Roadmap'
 
 const studentProfile = { studyStage: 'midway', graduationYear: '2027', courseLengthYears: '4', targetOccupation: 'Data Analyst' }
@@ -55,6 +56,7 @@ function renderRoadmap() {
 }
 
 beforeEach(() => {
+  clearCache()
   mockUseAuth.mockReset()
   mockUseLocation.mockReset()
   generateCareerPlan.mockReset()

@@ -9,6 +9,7 @@ import {
 import { marketSources } from '../data/marketSources'
 import { TOPICS, matchesProfile, isValidClassifiedItem, filterAndSortUpdates } from '../lib/marketUpdates'
 import { pickCurrentPeriod } from '../lib/roadmap'
+import { getCached, setCached } from '../lib/pageCache'
 import UpdateDetailPanel from '../components/UpdateDetailPanel'
 import NotebookFrame from '../components/NotebookFrame'
 
@@ -19,11 +20,13 @@ const DISCLAIMER = 'This is general career information, not financial, investmen
 // AI only to summarise/label each one — it does not fetch live news itself.
 export default function MarketUpdates() {
   const { user } = useAuth()
-  const [profile, setProfile] = useState(null)
-  const [plan, setPlan] = useState(null)
-  const [savedMap, setSavedMap] = useState({})
-  const [classified, setClassified] = useState(null) // null = still loading
-  const [frequency, setFrequency] = useState('weekly')
+  const cacheKey = user ? `updates:${user.id}` : null
+  const cached = cacheKey ? getCached(cacheKey) : null
+  const [profile, setProfile] = useState(cached?.profile ?? null)
+  const [plan, setPlan] = useState(cached?.plan ?? null)
+  const [savedMap, setSavedMap] = useState(cached?.savedMap ?? {})
+  const [classified, setClassified] = useState(cached?.classified ?? null) // null = still loading
+  const [frequency, setFrequency] = useState(cached?.frequency ?? 'weekly')
   const [topic, setTopic] = useState('All')
   const [recency, setRecency] = useState('All')
   const [search, setSearch] = useState('')
@@ -31,6 +34,10 @@ export default function MarketUpdates() {
 
   useEffect(() => {
     if (!user) return
+    // Already have this user's updates cached from an earlier mount this
+    // session — reuse it instead of re-summarising every item again on
+    // every visit to this page.
+    if (cached) return
     let cancelled = false
 
     async function load() {
@@ -72,11 +79,27 @@ export default function MarketUpdates() {
 
       const valid = results.filter(Boolean).filter((item) => savedStatusMap[item.id] !== 'dismissed')
       setClassified(valid)
+      setCached(cacheKey, {
+        profile: normalisedProfile,
+        plan: planData?.plan ?? null,
+        savedMap: savedStatusMap,
+        frequency: profileRow?.update_frequency ?? 'weekly',
+        classified: valid,
+      })
     }
 
     load()
     return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Keep the cache in sync with later edits (save/dismiss/frequency change)
+  // so a subsequent remount shows the latest state instead of refetching.
+  useEffect(() => {
+    if (!cacheKey || classified === null) return
+    setCached(cacheKey, { profile, plan, savedMap, frequency, classified })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cacheKey, profile, plan, savedMap, frequency, classified])
 
   if (!user) {
     return (

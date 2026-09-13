@@ -24,9 +24,11 @@ vi.mock('../lib/db', () => ({ getProfile: vi.fn(), saveProfile: vi.fn(), getPlan
 
 import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
 import { getProfile, saveProfile, getPlanWithActivities } from '../lib/db'
+import { clearCache } from '../lib/pageCache'
 import Profile from './Profile'
 
 beforeEach(() => {
+  clearCache()
   mockNavigate.mockClear()
   mockUseAuth.mockReset().mockReturnValue({ user: null })
   loadGuestPlan.mockReset().mockReturnValue(null)
