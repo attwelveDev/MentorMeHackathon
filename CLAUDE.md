@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Many international students begin career preparation too late, while existing platforms
 often provide more support for corporate roles than vocational and trade pathways.
-CareerCompass AU turns a student's qualification, career goal and Australian state or
+Planery turns a student's qualification, career goal and Australian state or
 territory into a structured career roadmap informed by entry-level job requirements.
 Whether the student is pursuing finance, early childhood education, carpentry or another
 pathway, the platform shows what they can do each stage to become more competitive and

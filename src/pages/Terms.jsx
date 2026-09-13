@@ -1,4 +1,4 @@
-// Terms of Service — plain-language placeholder covering how CareerCompass AU
+// Terms of Service — plain-language placeholder covering how Planery
 // (a student hackathon project) may be used, pending a full legal review.
 export default function Terms() {
   return (
@@ -8,14 +8,14 @@ export default function Terms() {
 
       <div className="mt-6 space-y-5 text-sm text-slate-700">
         <p>
-          CareerCompass AU is a career-planning tool for international students studying in
+          Planery is a career-planning tool for international students studying in
           Australia. By creating an account, you agree to use it for its intended purpose:
           building and tracking a personal career plan.
         </p>
         <section>
           <h2 className="font-semibold text-slate-900">What the platform does not provide</h2>
           <p className="mt-1">
-            CareerCompass AU does not provide migration, visa, legal, financial, or licensing
+            Planery does not provide migration, visa, legal, financial, or licensing
             advice, and does not guarantee employment, sponsorship, or migration outcomes.
             Guidance shown in the app, including AI-generated content, is general information
             only — always verify anything important with official sources or a qualified

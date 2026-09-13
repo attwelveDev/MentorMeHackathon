@@ -14,7 +14,7 @@ export default function Welcome() {
       leftPage={
         <>
           <div className="relative">
-            <h1 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">CareerCompass AU</h1>
+            <h1 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">Planery</h1>
             <SquiggleIcon className="absolute -right-1 -top-2 h-4 w-6 text-slate-400" />
           </div>
           <p className="font-diary-body mt-3 text-sm text-slate-500 dark:text-slate-400">
@@ -60,7 +60,7 @@ export default function Welcome() {
           </p>
 
           <p data-testid="ai-notice" className="font-diary-body mt-6 text-xs text-slate-400 dark:text-slate-500">
-            CareerCompass AU provides general career guidance, not employment guarantees,
+            Planery provides general career guidance, not employment guarantees,
             or migration, visa, legal, financial or licensing advice. AI-generated content
             may be incomplete or inaccurate — always verify with official sources.
           </p>

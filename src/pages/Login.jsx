@@ -111,7 +111,7 @@ export default function Login() {
           </form>
 
           <p className="font-diary-body mt-4 text-xs text-slate-400 dark:text-slate-500">
-            New to CareerCompass AU?{' '}
+            New to Planery?{' '}
             <Link to="/signup" className="text-slate-500 underline hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">
               Create an account
             </Link>

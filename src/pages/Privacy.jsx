@@ -1,5 +1,5 @@
 // Privacy Policy — plain-language placeholder describing what data
-// CareerCompass AU (a student hackathon project) stores and why.
+// Planery (a student hackathon project) stores and why.
 export default function Privacy() {
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">

@@ -1,4 +1,4 @@
-# CareerCompass AU
+# Planery
 
 Personalised, stage-by-stage career planning for international students and skilled migrants in Australia.
 

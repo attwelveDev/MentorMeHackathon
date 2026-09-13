@@ -12,7 +12,7 @@ screen (`src/pages/Profile.jsx`) currently has no way to capture this.
 This plan adds a required "Work rights" dropdown to the existing Profile form,
 backed by a new `WORK_RIGHTS` constant in `src/lib/profileOptions.js`, with an
 inline disclaimer clarifying the field is self-reported and that
-CareerCompass AU neither verifies it nor gives visa/migration advice. The
+Planery neither verifies it nor gives visa/migration advice. The
 value flows through the existing `navigate('/analysis', { state: { profile:
 form } })` call unchanged — no changes to `src/pages/Analysis.jsx` or
 `src/lib/ai.js` are needed, since the profile object is already
@@ -44,7 +44,7 @@ for the original build).
    required fields, allow submission to proceed to `/analysis` with
    `workRights` included in `state.profile`.
 5. An inline disclaimer paragraph shall render directly under the Work rights
-   field: "Self-reported — CareerCompass AU doesn't verify this or provide
+   field: "Self-reported — Planery doesn't verify this or provide
    visa/migration advice." It shall be visually distinct from the field's own
    error message (not red/alert-styled) and shall not use `role="alert"`.
 
@@ -294,7 +294,7 @@ infrastructure — this is a straight extension of the pattern already used for
         error={fieldErrors.workRights}
       />
       <p className="mt-1 text-xs text-slate-500">
-        Self-reported — CareerCompass AU doesn't verify this or provide
+        Self-reported — Planery doesn't verify this or provide
         visa/migration advice.
       </p>
       ```

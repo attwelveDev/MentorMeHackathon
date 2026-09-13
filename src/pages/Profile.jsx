@@ -283,7 +283,7 @@ export default function Profile() {
           error={fieldErrors.workRights}
         />
         <p className="font-diary-body mt-1 text-xs text-slate-500 dark:text-slate-400">
-          Self-reported — CareerCompass AU doesn't verify this or provide
+          Self-reported — Planery doesn't verify this or provide
           visa/migration advice.
         </p>
         <Field

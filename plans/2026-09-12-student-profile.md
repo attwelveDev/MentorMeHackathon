@@ -13,7 +13,7 @@
 
 ## 1. Summary
 
-International students on CareerCompass AU need a validated profile form that
+International students on Planery need a validated profile form that
 captures their qualification, education sector, study stage, career goal,
 skills and experience, then hands that data to the existing AI career-readiness
 analysis. Today `src/pages/Profile.jsx` exists as a placeholder — it is
@@ -134,8 +134,8 @@ component `Welcome()`:
 - Imports `Link` from `'react-router-dom'`.
 - Renders an `<h1>`, one value-prop `<p>`, a `<Link to="/profile">` styled as
   a button reading "Create my career plan", and one `<p className="mt-6 text-xs text-slate-400">`
-  containing the merged AI-notice + guarantee-disclaimer text: *"CareerCompass
-  AU provides general career guidance, not employment guarantees, or
+  containing the merged AI-notice + guarantee-disclaimer text: *"Planery
+  provides general career guidance, not employment guarantees, or
   migration, visa, legal, financial or licensing advice. AI-generated content
   may be incomplete or inaccurate — always verify with official sources."*
   There is currently no separate privacy statement anywhere on this screen.
@@ -353,7 +353,7 @@ task after Task 1 is independently testable via `npm test`.
   disclaimer `<p>` with two:
   ```jsx
   <p data-testid="ai-notice" className="mt-6 text-xs text-slate-400">
-    CareerCompass AU provides general career guidance, not employment
+    Planery provides general career guidance, not employment
     guarantees, or migration, visa, legal, financial or licensing advice.
     AI-generated content may be incomplete or inaccurate — always verify with
     official sources.

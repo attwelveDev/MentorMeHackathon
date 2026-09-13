@@ -24,7 +24,7 @@ export async function getCareerReadinessAnalysis(profile) {
   const prompt = `You are a career-guidance assistant for international students in Australia.
 Given this student profile (JSON): ${JSON.stringify(profile)}
 
-Do not comment on, assess, or list visa subclass, sponsorship pathways, or migration eligibility anywhere in your response, including insufficientInformation — CareerCompass AU does not provide migration or visa advice.
+Do not comment on, assess, or list visa subclass, sponsorship pathways, or migration eligibility anywhere in your response, including insufficientInformation — Planery does not provide migration or visa advice.
 
 Return a JSON object with these fields only:
 - strengths: string[]
