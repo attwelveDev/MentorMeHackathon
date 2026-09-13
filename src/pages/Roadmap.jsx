@@ -322,7 +322,7 @@ export default function Roadmap() {
                         backgroundColor: palette.bg,
                         transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
                       }}
-                      className="diary-note relative cursor-pointer rounded-lg border-2 p-4 pt-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                      className="diary-note relative cursor-pointer rounded-lg border-2 p-4 py-5 pr-6 transition hover:-translate-y-0.5 hover:shadow-md"
                       onClick={() => setOpenKey(keyOf(activity))}
                     >
                       {activity.isPinned && (
@@ -330,11 +330,11 @@ export default function Roadmap() {
                           📍 You are here
                         </p>
                       )}
-                      <p className="font-diary-title text-lg font-semibold text-slate-900">{activity.title}</p>
-                      <p className="font-diary-body text-xs text-slate-500">
+                      <p className="font-diary-title break-words text-lg font-semibold text-slate-900">{activity.title}</p>
+                      <p className="font-diary-body break-words text-xs text-slate-500">
                         {activity.category} · Priority: {activity.priority}
                       </p>
-                      <p className="font-diary-body mt-2 text-sm" style={{ color: palette.text }}>
+                      <p className="font-diary-body mt-2 break-words text-sm" style={{ color: palette.text }}>
                         {activity.explanation}
                       </p>
                     </div>
