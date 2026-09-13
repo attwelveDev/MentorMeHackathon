@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { getProfile } from '../lib/db'
 import NotebookFrame, {
   FloatingField,
   StickyNote,
@@ -40,7 +41,8 @@ export default function SignUp() {
       return
     }
     if (data.session) {
-      navigate('/')
+      const profile = await getProfile(data.session.user.id)
+      navigate(profile ? '/plan' : '/profile')
       return
     }
     setConfirmationPending(true)

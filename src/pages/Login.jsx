@@ -30,7 +30,7 @@ export default function Login() {
       return
     }
     if (data.session) {
-      navigate('/')
+      navigate('/diary')
     }
   }
 
