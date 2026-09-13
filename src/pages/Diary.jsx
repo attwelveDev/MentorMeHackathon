@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import {
   getPlanWithActivities, updateActivityStatus, updateActivity, deleteActivity, createActivity,
-  getDiaryEntriesForActivity, createDiaryEntry, setDiaryEntryFeedback,
+  getDiaryEntriesForActivity, getDiaryEntries, createDiaryEntry, setDiaryEntryFeedback,
 } from '../lib/db'
 import { getDiaryFeedback } from '../lib/ai'
 import { computeRoadmap, bucketActivities, computeStats, SECTION_NAMES } from '../lib/roadmap'
@@ -11,6 +11,7 @@ import { getNearestActivityNotification, getStreakNotification } from '../lib/no
 import { getReflectionPrompt } from '../lib/reflectionPrompts'
 import NotebookFrame, { StickyNote } from '../components/NotebookFrame'
 import DiarySection from '../components/DiarySection'
+import ProgressSummary from '../components/ProgressSummary'
 
 const PROGRESS_BY_STATUS = { 'Not started': 0, 'In progress': 50, 'Completed': 100 }
 
@@ -233,6 +234,7 @@ export default function Diary() {
   const [profile, setProfile] = useState(null)
   const [activities, setActivities] = useState(null)
   const [adding, setAdding] = useState(false)
+  const [recentDiaryEntries, setRecentDiaryEntries] = useState([])
 
   useEffect(() => {
     let cancelled = false
@@ -243,6 +245,18 @@ export default function Diary() {
         setProfile({ targetOccupation: existing.plan.target_occupation })
         setActivities(existing.activities.map(mapDbActivity))
       })
+    }
+    return () => { cancelled = true }
+  }, [user])
+
+  useEffect(() => {
+    let cancelled = false
+    if (user) {
+      getDiaryEntries(user.id, { limit: 3 }).then((entries) => {
+        if (!cancelled) setRecentDiaryEntries(entries)
+      })
+    } else {
+      setRecentDiaryEntries([])
     }
     return () => { cancelled = true }
   }, [user])
@@ -358,6 +372,7 @@ export default function Diary() {
           </div>
         )}
       </div>
+      <ProgressSummary stats={stats} recentDiaryEntries={recentDiaryEntries} user={user} />
     </>
   )
 

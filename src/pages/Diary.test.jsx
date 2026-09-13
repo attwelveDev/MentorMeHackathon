@@ -11,6 +11,7 @@ const mockUpdateActivity = vi.fn()
 const mockDeleteActivity = vi.fn()
 const mockCreateActivity = vi.fn()
 const mockGetDiaryEntriesForActivity = vi.fn()
+const mockGetDiaryEntries = vi.fn()
 const mockCreateDiaryEntry = vi.fn()
 const mockSetDiaryEntryFeedback = vi.fn()
 vi.mock('../lib/db', () => ({
@@ -20,6 +21,7 @@ vi.mock('../lib/db', () => ({
   deleteActivity: (...args) => mockDeleteActivity(...args),
   createActivity: (...args) => mockCreateActivity(...args),
   getDiaryEntriesForActivity: (...args) => mockGetDiaryEntriesForActivity(...args),
+  getDiaryEntries: (...args) => mockGetDiaryEntries(...args),
   createDiaryEntry: (...args) => mockCreateDiaryEntry(...args),
   setDiaryEntryFeedback: (...args) => mockSetDiaryEntryFeedback(...args),
 }))
@@ -37,6 +39,7 @@ beforeEach(() => {
   mockDeleteActivity.mockReset().mockResolvedValue(undefined)
   mockCreateActivity.mockReset()
   mockGetDiaryEntriesForActivity.mockReset().mockResolvedValue([])
+  mockGetDiaryEntries.mockReset().mockResolvedValue([])
   mockCreateDiaryEntry.mockReset()
   mockSetDiaryEntryFeedback.mockReset().mockResolvedValue(undefined)
   mockGetDiaryFeedback.mockReset()
@@ -71,7 +74,7 @@ describe('Diary dashboard', () => {
     render(<MemoryRouter><Diary /></MemoryRouter>)
     await waitFor(() => expect(screen.getAllByText('Overdue item').length).toBeGreaterThan(0))
     const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
-    expect(headings).toEqual(['Now', 'Graduate application period'])
+    expect(headings).toEqual(['Your progress', 'Now', 'Graduate application period'])
   })
 
   it("shows the student's goal and the static greeting on the left page", async () => {
