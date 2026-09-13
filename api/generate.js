@@ -7,7 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 // Tried in order; each free-tier model has its own separate daily quota, so
 // if one is exhausted (or deprecated/unavailable) the next still has headroom.
-const MODEL_FALLBACK_CHAIN = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite']
+const MODEL_FALLBACK_CHAIN = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite', 'gemini-3.5-flash-lite', 'gemini-3.5-flash']
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
