@@ -169,6 +169,7 @@ export default function Roadmap() {
 
   const roadmap = computeRoadmap(activities, profile ?? {}, new Date().getFullYear())
   const stats = computeStats(roadmap)
+  const statusTotal = stats.completed + stats.inProgress + stats.upcoming + stats.overdue
   const periodOrder = []
   roadmap.forEach((a) => {
     if (!periodOrder.includes(a.period)) periodOrder.push(a.period)
@@ -265,10 +266,10 @@ export default function Roadmap() {
       <section className="diary-note mt-8 rounded-2xl p-6">
         <h2 className="font-diary-title text-2xl text-slate-800">Your progress</h2>
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <StatCard label="Completed" value={stats.completed} />
-          <StatCard label="In progress" value={stats.inProgress} />
-          <StatCard label="Upcoming" value={stats.upcoming} />
-          <StatCard label="Overdue" value={stats.overdue} />
+          <StatCard label="Completed" value={stats.completed} total={statusTotal} color={STATUS_SLICE_COLOURS.Completed} />
+          <StatCard label="In progress" value={stats.inProgress} total={statusTotal} color={STATUS_SLICE_COLOURS['In progress']} />
+          <StatCard label="Upcoming" value={stats.upcoming} total={statusTotal} color={STATUS_SLICE_COLOURS.Upcoming} />
+          <StatCard label="Overdue" value={stats.overdue} total={statusTotal} color={STATUS_SLICE_COLOURS.Overdue} />
         </div>
         <StatusPieChart stats={stats} />
         <div className="mt-6">
@@ -378,11 +379,15 @@ export default function Roadmap() {
   )
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, total, color }) {
+  const pct = total > 0 ? Math.round((value / total) * 100) : 0
   return (
     <div className="diary-note rounded-lg border border-slate-200 p-4 text-center">
       <p className="font-diary-title text-3xl text-slate-900">{value}</p>
-      <p className="font-diary-body text-xs text-slate-500">{label}</p>
+      <p className="font-diary-body flex items-center justify-center gap-1.5 text-xs text-slate-500">
+        <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ backgroundColor: color }} />
+        {label} ({pct}%)
+      </p>
     </div>
   )
 }
@@ -455,26 +460,13 @@ function StatusPieChart({ stats }) {
     .join(', ')
 
   return (
-    <div className="mt-4 flex flex-wrap items-center gap-6">
+    <div className="mt-4 flex justify-center">
       <div
         className="h-32 w-32 shrink-0 rounded-full"
         style={{ background: `conic-gradient(${gradientStops})` }}
         role="img"
         aria-label={segments.map((s) => `${s.label}: ${s.value}`).join(', ')}
       />
-      <ul className="font-diary-body space-y-1 text-sm text-slate-600">
-        {segments.map((s) => (
-          <li key={s.label} className="flex items-center gap-2">
-            <span
-              className="inline-block h-3 w-3 shrink-0 rounded-sm"
-              style={{ backgroundColor: STATUS_SLICE_COLOURS[s.label] }}
-            />
-            <span>
-              {s.label}: {s.value} ({Math.round((s.value / total) * 100)}%)
-            </span>
-          </li>
-        ))}
-      </ul>
     </div>
   )
 }

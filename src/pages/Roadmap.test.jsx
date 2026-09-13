@@ -115,10 +115,10 @@ describe('Roadmap — guest, fresh generation', () => {
     await screen.findByRole('heading', { name: 'Year 1' })
     // completed: 3, inProgress: 0, upcoming: 2, overdue: 1 for this fixture at currentYear 2026
     // ("Apply for a part-time role", Year 2/2025, is the only entry before the pin that isn't completed)
-    expect(screen.getByText('Completed').previousSibling).toHaveTextContent('3')
-    expect(screen.getByText('In progress').previousSibling).toHaveTextContent('0')
-    expect(screen.getByText('Upcoming').previousSibling).toHaveTextContent('2')
-    expect(screen.getByText('Overdue').previousSibling).toHaveTextContent('1')
+    expect(screen.getByText(/^Completed \(\d+%\)$/).previousSibling).toHaveTextContent('3')
+    expect(screen.getByText(/^In progress \(\d+%\)$/).previousSibling).toHaveTextContent('0')
+    expect(screen.getByText(/^Upcoming \(\d+%\)$/).previousSibling).toHaveTextContent('2')
+    expect(screen.getByText(/^Overdue \(\d+%\)$/).previousSibling).toHaveTextContent('1')
   })
 
   it('shows "No diary entries yet" in the stats strip', async () => {
