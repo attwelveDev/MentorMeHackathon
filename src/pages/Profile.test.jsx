@@ -197,7 +197,8 @@ describe('Profile final required-field set', () => {
   })
 })
 
-function fillOtherRequiredFields({ studyStage = STUDY_STAGES[0].value } = {}) {
+async function fillOtherRequiredFields({ studyStage = STUDY_STAGES[0].value } = {}) {
+  await screen.findByLabelText(/course or qualification/i)
   fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
   fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
   fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: studyStage } })
@@ -209,9 +210,9 @@ function fillOtherRequiredFields({ studyStage = STUDY_STAGES[0].value } = {}) {
 }
 
 describe('Profile course length field', () => {
-  it('renders Course/program length in years as a required text field', () => {
+  it('renders Course/program length in years as a required text field', async () => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     const field = screen.getByLabelText(/course\/program length in years/i)
     expect(field.tagName).toBe('INPUT')
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -224,18 +225,18 @@ describe('Profile course length field', () => {
     expect(mockNavigate).not.toHaveBeenCalled()
   })
 
-  it.each(['0', '7', 'abc'])('blocks submission when Course/program length in years is %s', (value) => {
+  it.each(['0', '7', 'abc'])('blocks submission when Course/program length in years is %s', async (value) => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).not.toHaveBeenCalled()
     expect(screen.getByText(/enter a whole number between 1 and 6/i)).toBeInTheDocument()
   })
 
-  it.each(['1', '6'])('allows submission when Course/program length in years is the boundary value %s', (value) => {
+  it.each(['1', '6'])('allows submission when Course/program length in years is the boundary value %s', async (value) => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
@@ -247,9 +248,9 @@ describe('Profile course length field', () => {
     expect(screen.queryByLabelText(/course\/program length in years/i)).not.toBeInTheDocument()
   })
 
-  it('does not require Course/program length in years when study stage is Recently completed', () => {
+  it('does not require Course/program length in years when study stage is Recently completed', async () => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields({ studyStage: 'recently-completed' })
+    await fillOtherRequiredFields({ studyStage: 'recently-completed' })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
   })
@@ -369,13 +370,31 @@ describe('Profile persistence', () => {
     expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Data Analyst')
   })
 
-  it('saves the profile to localStorage for a guest on submit', () => {
+  it('saves the profile to localStorage for a guest on submit', async () => {
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(saveGuestPlan).toHaveBeenCalledWith(expect.objectContaining({ targetOccupation: 'Carpenter' }), [])
     expect(mockNavigate).toHaveBeenCalled()
+  })
+
+  it('shows a loading state for a signed-in user until their profile is fetched, then reveals the form', async () => {
+    mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
+    let resolveProfile
+    getProfile.mockReturnValue(new Promise((resolve) => { resolveProfile = resolve }))
+    render(<MemoryRouter><Profile /></MemoryRouter>)
+    expect(screen.getByText(/loading your profile/i)).toBeInTheDocument()
+    expect(screen.queryByLabelText(/course or qualification/i)).not.toBeInTheDocument()
+    resolveProfile(null)
+    await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toBeInTheDocument())
+    expect(screen.queryByText(/loading your profile/i)).not.toBeInTheDocument()
+  })
+
+  it('does not show a loading state for a guest', () => {
+    render(<MemoryRouter><Profile /></MemoryRouter>)
+    expect(screen.queryByText(/loading your profile/i)).not.toBeInTheDocument()
+    expect(screen.getByLabelText(/course or qualification/i)).toBeInTheDocument()
   })
 
   it('prefills the form from a signed-in user\'s saved Supabase profile', async () => {
@@ -392,7 +411,7 @@ describe('Profile persistence', () => {
   it('saves the profile to Supabase for a signed-in user on submit, then navigates', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     await waitFor(() => expect(saveProfile).toHaveBeenCalledWith('u1', expect.objectContaining({ targetOccupation: 'Carpenter' })))
@@ -403,7 +422,7 @@ describe('Profile persistence', () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     saveProfile.mockRejectedValue(new Error('boom'))
     render(<MemoryRouter><Profile /></MemoryRouter>)
-    fillOtherRequiredFields()
+    await fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(await screen.findByText(/we could not save your profile/i)).toBeInTheDocument()

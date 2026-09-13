@@ -72,19 +72,24 @@ export default function Profile() {
   })
   const [fieldErrors, setFieldErrors] = useState({})
   const [formError, setFormError] = useState(null)
+  const [loadingProfile, setLoadingProfile] = useState(Boolean(user))
 
   useEffect(() => {
     let cancelled = false
     async function loadExisting() {
       if (user) {
+        setLoadingProfile(true)
         try {
           const existing = await getProfile(user.id)
           if (!cancelled && existing) setForm((prev) => ({ ...prev, ...mapProfileRow(existing) }))
         } catch {
           // best-effort prefill; leave the form blank if it fails
+        } finally {
+          if (!cancelled) setLoadingProfile(false)
         }
         return
       }
+      setLoadingProfile(false)
       const guest = loadGuestPlan()
       if (!cancelled && guest?.profile) setForm((prev) => ({ ...prev, ...guest.profile }))
     }
@@ -124,6 +129,14 @@ export default function Profile() {
     }
 
     navigate('/analysis', { state: { profile: form } })
+  }
+
+  if (loadingProfile) {
+    return (
+      <div className="diary-paper flex min-h-screen items-center justify-center px-4">
+        <p className="font-diary-title text-2xl text-slate-700 dark:text-slate-200">Loading your profile…</p>
+      </div>
+    )
   }
 
   return (
