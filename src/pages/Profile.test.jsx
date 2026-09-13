@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import {
   EDUCATION_SECTORS,
   STUDY_STAGES,
@@ -36,7 +37,7 @@ beforeEach(() => {
 
 describe('Profile validation', () => {
   it('shows a per-field error and a summary banner when a required field is empty, and does not navigate', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Carpenter' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -46,7 +47,7 @@ describe('Profile validation', () => {
   })
 
   it('navigates to /analysis with the profile when all required fields are filled', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Bachelor of IT' } })
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
@@ -70,7 +71,7 @@ describe('Profile validation', () => {
 
 describe('Profile dropdown fields', () => {
   it('renders Education sector as a select with the configured options', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     const select = screen.getByLabelText(/education sector/i)
     expect(select.tagName).toBe('SELECT')
     EDUCATION_SECTORS.forEach((opt) => {
@@ -79,7 +80,7 @@ describe('Profile dropdown fields', () => {
   })
 
   it('blocks submission and shows an error when Education sector is left unselected', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Diploma of Early Childhood Education' } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
     fireEvent.change(screen.getByLabelText(/target occupation/i), { target: { value: 'Early Childhood Educator' } })
@@ -88,7 +89,7 @@ describe('Profile dropdown fields', () => {
   })
 
   it('renders Study stage and State/territory as selects with the configured options', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     expect(screen.getByLabelText(/current study stage/i).tagName).toBe('SELECT')
     expect(screen.getByLabelText(/australian state or territory/i).tagName).toBe('SELECT')
     expect(STUDY_STAGES.length + AU_STATES.length).toBeGreaterThan(0)
@@ -97,7 +98,7 @@ describe('Profile dropdown fields', () => {
 
 describe('Profile work-preference fields', () => {
   it('renders employment arrangement and work location mode as selects, and other preferences as free text', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     expect(screen.getByLabelText(/preferred employment arrangement/i).tagName).toBe('SELECT')
     expect(screen.getByLabelText(/preferred work location mode/i).tagName).toBe('SELECT')
     expect(screen.getByLabelText(/other work preferences/i).tagName).toBe('INPUT')
@@ -105,12 +106,12 @@ describe('Profile work-preference fields', () => {
   })
 
   it('does not render a "preferred work setting" field anymore', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     expect(screen.queryByLabelText(/preferred work setting/i)).not.toBeInTheDocument()
   })
 
   it('allows submission with these three fields left blank as long as required fields are filled', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Bachelor of Nursing' } })
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
@@ -137,7 +138,7 @@ function fillRequiredExcept(omit) {
     graduationYear: '2028',
     courseLengthYears: '3',
   }
-  render(<Profile />)
+  render(<MemoryRouter><Profile /></MemoryRouter>)
   const labelFor = {
     qualification: /course or qualification/i,
     educationSector: /education sector/i,
@@ -209,7 +210,7 @@ function fillOtherRequiredFields({ studyStage = STUDY_STAGES[0].value } = {}) {
 
 describe('Profile course length field', () => {
   it('renders Course/program length in years as a required text field', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     const field = screen.getByLabelText(/course\/program length in years/i)
     expect(field.tagName).toBe('INPUT')
@@ -224,7 +225,7 @@ describe('Profile course length field', () => {
   })
 
   it.each(['0', '7', 'abc'])('blocks submission when Course/program length in years is %s', (value) => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -233,7 +234,7 @@ describe('Profile course length field', () => {
   })
 
   it.each(['1', '6'])('allows submission when Course/program length in years is the boundary value %s', (value) => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -241,13 +242,13 @@ describe('Profile course length field', () => {
   })
 
   it('hides the Course/program length in years field when study stage is Recently completed', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: 'recently-completed' } })
     expect(screen.queryByLabelText(/course\/program length in years/i)).not.toBeInTheDocument()
   })
 
   it('does not require Course/program length in years when study stage is Recently completed', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields({ studyStage: 'recently-completed' })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
     expect(mockNavigate).toHaveBeenCalled()
@@ -256,14 +257,14 @@ describe('Profile course length field', () => {
 
 describe('Profile qualification "none yet" checkbox', () => {
   it('disables the qualification input and satisfies the required check when checked', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
     expect(screen.getByLabelText(/course or qualification/i)).toBeDisabled()
     expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('No formal qualification yet')
   })
 
   it('re-enables and clears the qualification input when unchecked', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     const checkbox = screen.getByLabelText(/i don't have a qualification yet/i)
     fireEvent.click(checkbox)
     fireEvent.click(checkbox)
@@ -272,7 +273,7 @@ describe('Profile qualification "none yet" checkbox', () => {
   })
 
   it('allows submission using the "no qualification yet" sentinel in place of free text', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.click(screen.getByLabelText(/i don't have a qualification yet/i))
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
@@ -291,14 +292,14 @@ describe('Profile qualification "none yet" checkbox', () => {
 
 describe('Profile specialisation "none yet" checkbox', () => {
   it('disables the specialisation input and sets the sentinel value when checked', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.click(screen.getByLabelText(/i don't have a major, specialisation or trade yet/i))
     expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toBeDisabled()
     expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveValue('No specific major or specialisation')
   })
 
   it('re-enables and clears the specialisation input when unchecked', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     const checkbox = screen.getByLabelText(/i don't have a major, specialisation or trade yet/i)
     fireEvent.click(checkbox)
     fireEvent.click(checkbox)
@@ -314,7 +315,7 @@ describe('Profile specialisation "none yet" checkbox', () => {
 
 describe('Profile work rights field', () => {
   it('renders Work rights as a select with the configured options', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     const select = screen.getByLabelText(/work rights/i)
     expect(select.tagName).toBe('SELECT')
     WORK_RIGHTS.forEach((opt) => {
@@ -323,12 +324,12 @@ describe('Profile work rights field', () => {
   })
 
   it('renders the self-reported disclaimer near the field', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     expect(screen.getByText(/self-reported.*doesn't verify this or provide visa\/migration advice/i)).toBeInTheDocument()
   })
 
   it('blocks submission and shows an error when Work rights is left unselected', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
@@ -340,7 +341,7 @@ describe('Profile work rights field', () => {
   })
 
   it('allows submission when "Prefer not to say" is selected, alongside the other required fields', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fireEvent.change(screen.getByLabelText(/course or qualification/i), { target: { value: 'Certificate III in Carpentry' } })
     fireEvent.change(screen.getByLabelText(/education sector/i), { target: { value: EDUCATION_SECTORS[0].value } })
     fireEvent.change(screen.getByLabelText(/current study stage/i), { target: { value: STUDY_STAGES[0].value } })
@@ -363,13 +364,13 @@ describe('Profile persistence', () => {
       profile: { qualification: 'Bachelor of IT', targetOccupation: 'Data Analyst' },
       activities: [],
     })
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('Bachelor of IT'))
     expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Data Analyst')
   })
 
   it('saves the profile to localStorage for a guest on submit', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -383,14 +384,14 @@ describe('Profile persistence', () => {
       qualification: 'Diploma of Early Childhood Education',
       target_occupation: 'Early Childhood Educator',
     })
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     await waitFor(() => expect(screen.getByLabelText(/course or qualification/i)).toHaveValue('Diploma of Early Childhood Education'))
     expect(screen.getByLabelText(/target occupation/i)).toHaveValue('Early Childhood Educator')
   })
 
   it('saves the profile to Supabase for a signed-in user on submit, then navigates', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -401,7 +402,7 @@ describe('Profile persistence', () => {
   it('shows an error and does not navigate when saving a signed-in user\'s profile fails', async () => {
     mockUseAuth.mockReturnValue({ user: { id: 'u1' } })
     saveProfile.mockRejectedValue(new Error('boom'))
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     fillOtherRequiredFields()
     fireEvent.change(screen.getByLabelText(/course\/program length in years/i), { target: { value: '3' } })
     fireEvent.click(screen.getByRole('button', { name: /create my plan/i }))
@@ -412,7 +413,7 @@ describe('Profile persistence', () => {
 
 describe('Profile free-text field placeholders', () => {
   it('renders the example placeholder text on each free-text field', () => {
-    render(<Profile />)
+    render(<MemoryRouter><Profile /></MemoryRouter>)
     expect(screen.getByLabelText(/course or qualification/i)).toHaveAttribute(
       'placeholder', 'e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry')
     expect(screen.getByLabelText(/^major, specialisation or trade$/i)).toHaveAttribute(

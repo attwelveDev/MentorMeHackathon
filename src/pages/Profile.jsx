@@ -13,6 +13,7 @@ import {
 import { useAuth } from '../lib/auth'
 import { loadGuestPlan, saveGuestPlan } from '../lib/localPlan'
 import { getProfile, saveProfile } from '../lib/db'
+import NotebookFrame, { StickyNote, SquiggleIcon, DeskIllustration, ArrowRightIcon } from '../components/NotebookFrame'
 
 // Screen 2: Student profile
 const BASE_REQUIRED_FIELDS = ['qualification', 'educationSector', 'studyStage', 'graduationYear', 'targetOccupation', 'skills', 'experience', 'workRights']
@@ -126,15 +127,43 @@ export default function Profile() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
-      <h1 className="text-2xl font-bold text-slate-900">Your profile</h1>
-      <p className="mt-2 text-sm text-slate-500">
-        Fields marked with * are required.
-      </p>
-      {formError && (
-        <p role="alert" className="mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">{formError}</p>
-      )}
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+    <NotebookFrame
+      stickyNotes={['One step closer', "You've got this ⌣"]}
+      leftPage={
+        <>
+          <div className="relative">
+            <h1 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">Your profile</h1>
+            <SquiggleIcon className="absolute -right-1 -top-2 h-4 w-6 text-slate-400" />
+          </div>
+          <p className="font-diary-body mt-3 text-sm text-slate-500 dark:text-slate-400">
+            Tell us about your qualification and goals so we can sketch out a plan that actually fits you.
+            Fields marked with * are required.
+          </p>
+
+          <div className="relative mt-8">
+            <div className="absolute -top-4 right-2 rotate-3">
+              <StickyNote small>A career I love</StickyNote>
+            </div>
+            <DeskIllustration className="mx-auto h-auto w-full max-w-[260px]" />
+          </div>
+
+          <p className="font-diary-body mt-4 text-center text-sm text-slate-500 dark:text-slate-400">
+            Same girl…{' '}
+            <span className="font-diary-title text-base text-teal-700 dark:text-teal-300">A brighter future ♥</span>
+          </p>
+        </>
+      }
+      rightPage={
+        <>
+          <h2 className="font-diary-title text-3xl text-slate-800 dark:text-slate-100">About you</h2>
+          <p className="font-diary-body mt-1 text-sm text-slate-500 dark:text-slate-400">
+            This shapes the roadmap we build for you next.
+          </p>
+
+          {formError && (
+            <p role="alert" className="font-diary-body mt-4 rounded-md bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">{formError}</p>
+          )}
+          <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <Field
           id="qualification"
           label="Course or qualification *"
@@ -144,7 +173,7 @@ export default function Profile() {
           disabled={form.qualification === NO_QUALIFICATION_YET}
           placeholder="e.g. Bachelor of Nursing, Diploma of Early Childhood Education, Certificate III in Carpentry"
         />
-        <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+        <label className="font-diary-body mt-1 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input
             type="checkbox"
             checked={form.qualification === NO_QUALIFICATION_YET}
@@ -161,7 +190,7 @@ export default function Profile() {
           disabled={form.specialisation === NO_SPECIALISATION}
           placeholder="e.g. Paediatric nursing, Cabinetmaking, Financial accounting"
         />
-        <label className="mt-1 flex items-center gap-2 text-sm text-slate-600">
+        <label className="font-diary-body mt-1 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input
             type="checkbox"
             checked={form.specialisation === NO_SPECIALISATION}
@@ -230,7 +259,7 @@ export default function Profile() {
           options={WORK_RIGHTS}
           error={fieldErrors.workRights}
         />
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="font-diary-body mt-1 text-xs text-slate-500 dark:text-slate-400">
           Self-reported — CareerCompass AU doesn't verify this or provide
           visa/migration advice.
         </p>
@@ -294,14 +323,17 @@ export default function Profile() {
           error={fieldErrors.licences}
           placeholder="e.g. Provisional driver's licence, Working with Children Check, White Card"
         />
-        <button
-          type="submit"
-          className="rounded-md bg-indigo-600 px-6 py-3 font-medium text-white hover:bg-indigo-700"
-        >
-          Create my plan
-        </button>
-      </form>
-    </div>
+            <button
+              type="submit"
+              className="font-diary-title flex w-full items-center justify-center gap-2 rounded-full bg-sky-300 px-4 py-3 text-lg text-slate-800 shadow-sm transition hover:bg-sky-400 dark:bg-sky-500 dark:text-slate-900 dark:hover:bg-sky-400"
+            >
+              Create my plan
+              <ArrowRightIcon className="h-4 w-4" />
+            </button>
+          </form>
+        </>
+      }
+    />
   )
 }
 
@@ -309,28 +341,30 @@ function Field({ id, label, value, onChange, type = 'text', options = [], error,
   const Component = type === 'textarea' ? 'textarea' : type === 'select' ? 'select' : 'input'
   return (
     <label htmlFor={id} className="block">
-      <span className="text-sm font-medium text-slate-700">{label}</span>
-      <Component
-        id={id}
-        value={value}
-        maxLength={type === 'select' ? undefined : 500}
-        onChange={(e) => onChange(e.target.value)}
-        aria-describedby={error ? `${id}-error` : undefined}
-        disabled={disabled}
-        placeholder={type === 'select' ? undefined : placeholder}
-        className={`mt-1 block w-full rounded-md border px-3 py-2 shadow-sm focus:outline-none focus:ring-1 ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-500' : 'border-slate-300 focus:border-indigo-500 focus:ring-indigo-500'}`}
-        {...(type === 'textarea' ? { rows: 3 } : {})}
-      >
-        {type === 'select' ? (
-          <>
-            <option value="">Select…</option>
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </>
-        ) : null}
-      </Component>
-      {error && <p id={`${id}-error`} role="alert" className="mt-1 text-sm text-red-600">{error}</p>}
+      <span className="font-diary-body text-sm text-slate-600 dark:text-slate-300">{label}</span>
+      <div className={`diary-field mt-1 rounded-xl border px-3 ${error ? 'border-red-400' : 'border-slate-300 dark:border-slate-600'}`}>
+        <Component
+          id={id}
+          value={value}
+          maxLength={type === 'select' ? undefined : 500}
+          onChange={(e) => onChange(e.target.value)}
+          aria-describedby={error ? `${id}-error` : undefined}
+          disabled={disabled}
+          placeholder={type === 'select' ? undefined : placeholder}
+          className="font-diary-body block w-full bg-transparent py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none dark:text-slate-100"
+          {...(type === 'textarea' ? { rows: 3 } : {})}
+        >
+          {type === 'select' ? (
+            <>
+              <option value="">Select…</option>
+              {options.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </>
+          ) : null}
+        </Component>
+      </div>
+      {error && <p id={`${id}-error`} role="alert" className="font-diary-body mt-1 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </label>
   )
 }
