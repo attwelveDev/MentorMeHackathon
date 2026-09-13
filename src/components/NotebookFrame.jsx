@@ -31,9 +31,18 @@ export default function NotebookFrame({ leftPage, rightPage, stickyNotes = [] })
           <nav aria-label="Book tabs" className="relative hidden w-32 shrink-0 pt-10 sm:block">
             {/* The tab-holder page: same plane as the Planery text, sitting behind the tabs. */}
             <div className="diary-note diary-note--no-tape absolute inset-0 rounded-l-2xl" />
-            <p className="font-diary-title relative flex items-baseline gap-1 px-3 text-2xl text-slate-800 dark:text-slate-100">
-              Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
-            </p>
+            {user ? (
+              <p className="font-diary-title relative flex items-baseline gap-1 px-3 text-2xl text-slate-800 dark:text-slate-100">
+                Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
+              </p>
+            ) : (
+              <Link
+                to="/"
+                className="font-diary-title relative flex items-baseline gap-1 px-3 text-2xl text-slate-800 dark:text-slate-100"
+              >
+                Planery <SquiggleIcon className="h-3 w-4 text-slate-400" />
+              </Link>
+            )}
             <p className="font-diary-body relative mb-4 mt-1 px-3 text-[11px] leading-tight text-slate-500 dark:text-slate-400">
               Small steps<br />bigger<br />tomorrows
             </p>
