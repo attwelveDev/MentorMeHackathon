@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate, Link } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { generateCareerPlan, getDiaryFeedback } from '../lib/ai'
 import {
@@ -10,6 +10,7 @@ import { saveGuestPlan, loadGuestPlan } from '../lib/localPlan'
 import { computeRoadmap, computeStats } from '../lib/roadmap'
 import LockedAction from '../components/LockedAction'
 import CheckpointPanel from '../components/CheckpointPanel'
+import NotebookFrame from '../components/NotebookFrame'
 
 const SAVE_NOTICE = "Saved to this browser. This plan is only saved on this device/browser — it survives closing this tab, but is lost if you clear this browser's site data or switch device/browser."
 
@@ -25,12 +26,6 @@ const COLOURS = {
 }
 
 const GOAL_COLOURS = { background: '#3b3163', text: '#f5f1e8' }
-
-const TABS = [
-  { to: '/diary', label: 'Diary', bg: '#fef3c7' },
-  { to: '/updates', label: 'News', bg: '#e0e7ff' },
-  { to: '/profile', label: 'Profile', bg: '#dbeafe' },
-]
 
 function mapDbActivity(row) {
   return {
@@ -237,138 +232,124 @@ export default function Roadmap() {
     setAccepted(true)
   }
 
-  return (
-    <div className="diary-paper min-h-screen py-10">
-      <div className="mx-auto flex max-w-5xl gap-0 px-4">
-        <nav aria-label="Book tabs" className="relative w-28 shrink-0 pt-10">
-          {TABS.map(({ to, label, bg }, i) => (
-            <Link
-              key={to}
-              to={to}
-              style={{ backgroundColor: bg, marginLeft: `${i * 6}px` }}
-              className="diary-tab font-diary-title mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-700 hover:brightness-95"
-            >
-              {label}
-            </Link>
-          ))}
-          <span
-            aria-disabled="true"
-            style={{ backgroundColor: '#e7e5e4', marginLeft: `${TABS.length * 6}px` }}
-            className="diary-tab font-diary-title mb-3 block rounded-l-xl py-3 pl-4 pr-2 text-lg text-slate-400"
+  const leftPage = (
+    <>
+      <div
+        className="diary-note -rotate-1 rounded-2xl p-6 text-center"
+        style={{ backgroundColor: GOAL_COLOURS.background, color: GOAL_COLOURS.text }}
+      >
+        <p className="font-diary-title text-2xl">🚩 Goal</p>
+        <p className="font-diary-title mt-1 text-3xl">Become a {profile?.targetOccupation}</p>
+      </div>
+
+      <div className="mt-8 flex flex-wrap items-center gap-4">
+        {(!user || !plan) && (
+          <button
+            type="button"
+            onClick={handleSave}
+            className="font-diary-title rounded-lg border-2 border-slate-300 bg-white px-6 py-2 text-lg text-slate-700 shadow-sm hover:bg-slate-50"
           >
-            Jobs (coming soon)
-          </span>
-        </nav>
+            Save
+          </button>
+        )}
+        <LockedAction
+          onClick={handleAccept}
+          className="font-diary-title rounded-lg bg-indigo-700 px-6 py-2 text-lg text-white shadow-sm hover:bg-indigo-800"
+        >
+          {accepted || plan?.accepted ? 'Accepted' : 'Accept'}
+        </LockedAction>
+      </div>
+      {saveNotice && <p className="font-diary-body mt-2 text-sm text-slate-500">{saveNotice}</p>}
+      {saveError && <p role="alert" className="font-diary-body mt-2 text-sm text-red-700">{saveError}</p>}
 
-        <div className="diary-note min-w-0 flex-1 rounded-2xl p-6 sm:p-10">
-          <h1 className="font-diary-title text-4xl text-slate-800">Career Roadmap</h1>
-          <p className="font-diary-body mt-1 text-slate-500">A plan for the future me.</p>
-
-          <div className="mt-8 space-y-8">
-            {periodOrder.map((period) => (
-              <section key={period}>
-                <h2 className="font-diary-title text-2xl text-slate-800">{period}</h2>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  {roadmap
-                    .filter((a) => a.period === period)
-                    .map((activity, i) => {
-                      const palette = COLOURS[activity.colour]
-                      return (
-                        <div
-                          key={keyOf(activity)}
-                          data-testid={`checkpoint-${activity.title}`}
-                          style={{
-                            borderColor: palette.border,
-                            backgroundColor: palette.bg,
-                            transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
-                          }}
-                          className="diary-note relative cursor-pointer rounded-lg border-2 p-4 pt-5 transition hover:-translate-y-0.5 hover:shadow-md"
-                          onClick={() => setOpenKey(keyOf(activity))}
-                        >
-                          {activity.isPinned && (
-                            <p className="font-diary-title absolute -top-3 left-2 rounded bg-white px-1 text-sm font-semibold text-red-600 shadow-sm">
-                              📍 You are here
-                            </p>
-                          )}
-                          <p className="font-diary-title text-lg font-semibold text-slate-900">{activity.title}</p>
-                          <p className="font-diary-body text-xs text-slate-500">
-                            {activity.category} · Priority: {activity.priority}
-                          </p>
-                          <p className="font-diary-body mt-2 text-sm" style={{ color: palette.text }}>
-                            {activity.explanation}
-                          </p>
-                        </div>
-                      )
-                    })}
-                </div>
-              </section>
+      <section className="diary-note mt-8 rounded-2xl p-6">
+        <h2 className="font-diary-title text-2xl text-slate-800">Your progress</h2>
+        <div className="mt-4 grid grid-cols-2 gap-4">
+          <StatCard label="Completed" value={stats.completed} />
+          <StatCard label="In progress" value={stats.inProgress} />
+          <StatCard label="Upcoming" value={stats.upcoming} />
+          <StatCard label="Overdue" value={stats.overdue} />
+        </div>
+        <div className="mt-6">
+          <h3 className="font-diary-title text-lg text-slate-700">Progress by category</h3>
+          <ul className="font-diary-body mt-2 space-y-1 text-sm text-slate-600">
+            {Object.entries(stats.byCategory).map(([category, { completed, total }]) => (
+              <li key={category}>
+                {category}: {completed}/{total}
+              </li>
             ))}
-          </div>
+          </ul>
+        </div>
+        <div className="mt-6">
+          <h3 className="font-diary-title text-lg text-slate-700">Recent diary entries</h3>
+          {user && recentDiaryEntries.length > 0 ? (
+            <ul className="font-diary-body mt-2 space-y-2 text-sm text-slate-600">
+              {recentDiaryEntries.map((entry) => (
+                <li key={entry.id}>
+                  <span className="font-medium text-slate-800">{entry.activity?.title}: </span>
+                  {entry.entry_text}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="font-diary-body mt-2 text-sm text-slate-500">No diary entries yet</p>
+          )}
+        </div>
+      </section>
+    </>
+  )
 
-          <div
-            className="diary-note mt-10 -rotate-1 rounded-2xl p-6 text-center"
-            style={{ backgroundColor: GOAL_COLOURS.background, color: GOAL_COLOURS.text }}
-          >
-            <p className="font-diary-title text-2xl">🚩 Goal</p>
-            <p className="font-diary-title mt-1 text-3xl">Become a {profile?.targetOccupation}</p>
-          </div>
+  const rightPage = (
+    <>
+      <h1 className="font-diary-title text-4xl text-slate-800">Career Roadmap</h1>
+      <p className="font-diary-body mt-1 text-slate-500">A plan for the future me.</p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-4">
-            {(!user || !plan) && (
-              <button
-                type="button"
-                onClick={handleSave}
-                className="font-diary-title rounded-lg border-2 border-slate-300 bg-white px-6 py-2 text-lg text-slate-700 shadow-sm hover:bg-slate-50"
-              >
-                Save
-              </button>
-            )}
-            <LockedAction
-              onClick={handleAccept}
-              className="font-diary-title rounded-lg bg-indigo-700 px-6 py-2 text-lg text-white shadow-sm hover:bg-indigo-800"
-            >
-              {accepted || plan?.accepted ? 'Accepted' : 'Accept'}
-            </LockedAction>
-          </div>
-          {saveNotice && <p className="font-diary-body mt-2 text-sm text-slate-500">{saveNotice}</p>}
-          {saveError && <p role="alert" className="font-diary-body mt-2 text-sm text-red-700">{saveError}</p>}
-
-          <section className="diary-note mt-10 rounded-2xl p-6">
-            <h2 className="font-diary-title text-2xl text-slate-800">Your progress</h2>
-            <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
-              <StatCard label="Completed" value={stats.completed} />
-              <StatCard label="In progress" value={stats.inProgress} />
-              <StatCard label="Upcoming" value={stats.upcoming} />
-              <StatCard label="Overdue" value={stats.overdue} />
-            </div>
-            <div className="mt-6">
-              <h3 className="font-diary-title text-lg text-slate-700">Progress by category</h3>
-              <ul className="font-diary-body mt-2 space-y-1 text-sm text-slate-600">
-                {Object.entries(stats.byCategory).map(([category, { completed, total }]) => (
-                  <li key={category}>
-                    {category}: {completed}/{total}
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div className="mt-6">
-              <h3 className="font-diary-title text-lg text-slate-700">Recent diary entries</h3>
-              {user && recentDiaryEntries.length > 0 ? (
-                <ul className="font-diary-body mt-2 space-y-2 text-sm text-slate-600">
-                  {recentDiaryEntries.map((entry) => (
-                    <li key={entry.id}>
-                      <span className="font-medium text-slate-800">{entry.activity?.title}: </span>
-                      {entry.entry_text}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="font-diary-body mt-2 text-sm text-slate-500">No diary entries yet</p>
-              )}
+      <div className="mt-8 space-y-8">
+        {periodOrder.map((period) => (
+          <section key={period}>
+            <h2 className="font-diary-title text-2xl text-slate-800">{period}</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              {roadmap
+                .filter((a) => a.period === period)
+                .map((activity, i) => {
+                  const palette = COLOURS[activity.colour]
+                  return (
+                    <div
+                      key={keyOf(activity)}
+                      data-testid={`checkpoint-${activity.title}`}
+                      style={{
+                        borderColor: palette.border,
+                        backgroundColor: palette.bg,
+                        transform: `rotate(${i % 2 === 0 ? -1 : 1}deg)`,
+                      }}
+                      className="diary-note relative cursor-pointer rounded-lg border-2 p-4 pt-5 transition hover:-translate-y-0.5 hover:shadow-md"
+                      onClick={() => setOpenKey(keyOf(activity))}
+                    >
+                      {activity.isPinned && (
+                        <p className="font-diary-title absolute -top-3 left-2 rounded bg-white px-1 text-sm font-semibold text-red-600 shadow-sm">
+                          📍 You are here
+                        </p>
+                      )}
+                      <p className="font-diary-title text-lg font-semibold text-slate-900">{activity.title}</p>
+                      <p className="font-diary-body text-xs text-slate-500">
+                        {activity.category} · Priority: {activity.priority}
+                      </p>
+                      <p className="font-diary-body mt-2 text-sm" style={{ color: palette.text }}>
+                        {activity.explanation}
+                      </p>
+                    </div>
+                  )
+                })}
             </div>
           </section>
-        </div>
+        ))}
       </div>
+    </>
+  )
+
+  return (
+    <>
+      <NotebookFrame leftPage={leftPage} rightPage={rightPage} />
 
       {openActivity && (
         <div
@@ -394,7 +375,7 @@ export default function Roadmap() {
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 

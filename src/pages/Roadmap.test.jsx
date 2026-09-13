@@ -133,7 +133,7 @@ describe('Roadmap — guest, fresh generation', () => {
     await screen.findByRole('heading', { name: 'Year 1' })
     expect(screen.getByRole('link', { name: /diary/i })).toBeInTheDocument()
     expect(screen.getByRole('link', { name: /news/i })).toBeInTheDocument()
-    expect(screen.getByText(/jobs \(coming soon\)/i)).toBeInTheDocument()
+    expect(screen.getByText('Jobs')).toHaveAttribute('title', 'Coming soon')
     expect(screen.getByRole('link', { name: /profile/i })).toBeInTheDocument()
   })
 
