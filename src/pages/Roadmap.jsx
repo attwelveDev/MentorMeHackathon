@@ -265,13 +265,13 @@ export default function Roadmap() {
 
       <section className="diary-note mt-8 rounded-2xl p-6">
         <h2 className="font-diary-title text-2xl text-slate-800">Your progress</h2>
+        <StatusPieChart stats={stats} />
         <div className="mt-4 grid grid-cols-2 gap-4">
           <StatCard label="Completed" value={stats.completed} total={statusTotal} color={STATUS_SLICE_COLOURS.Completed} />
           <StatCard label="In progress" value={stats.inProgress} total={statusTotal} color={STATUS_SLICE_COLOURS['In progress']} />
           <StatCard label="Upcoming" value={stats.upcoming} total={statusTotal} color={STATUS_SLICE_COLOURS.Upcoming} />
           <StatCard label="Overdue" value={stats.overdue} total={statusTotal} color={STATUS_SLICE_COLOURS.Overdue} />
         </div>
-        <StatusPieChart stats={stats} />
         <div className="mt-6">
           <h3 className="font-diary-title text-lg text-slate-700">Progress by category</h3>
           <div className="mt-3 space-y-3">
@@ -428,11 +428,13 @@ function CategoryProgressBar({ label, completed, total }) {
   )
 }
 
+// Pastel tones matching the activity-card palette used elsewhere on this page
+// (COLOURS above: green = completed, amber = current/in progress, blue = upcoming, slate = missed/overdue).
 const STATUS_SLICE_COLOURS = {
-  Completed: '#0ca30c',
-  'In progress': '#fab219',
-  Upcoming: '#2a78d6',
-  Overdue: '#d03b3b',
+  Completed: '#86efac',
+  'In progress': '#fcd34d',
+  Upcoming: '#93c5fd',
+  Overdue: '#cbd5e1',
 }
 
 function StatusPieChart({ stats }) {
