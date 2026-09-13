@@ -270,15 +270,14 @@ export default function Roadmap() {
           <StatCard label="Upcoming" value={stats.upcoming} />
           <StatCard label="Overdue" value={stats.overdue} />
         </div>
+        <StatusPieChart stats={stats} />
         <div className="mt-6">
           <h3 className="font-diary-title text-lg text-slate-700">Progress by category</h3>
-          <ul className="font-diary-body mt-2 space-y-1 text-sm text-slate-600">
+          <div className="mt-3 space-y-3">
             {Object.entries(stats.byCategory).map(([category, { completed, total }]) => (
-              <li key={category}>
-                {category}: {completed}/{total}
-              </li>
+              <CategoryProgressBar key={category} label={category} completed={completed} total={total} />
             ))}
-          </ul>
+          </div>
         </div>
         <div className="mt-6">
           <h3 className="font-diary-title text-lg text-slate-700">Recent diary entries</h3>
@@ -384,6 +383,98 @@ function StatCard({ label, value }) {
     <div className="diary-note rounded-lg border border-slate-200 p-4 text-center">
       <p className="font-diary-title text-3xl text-slate-900">{value}</p>
       <p className="font-diary-body text-xs text-slate-500">{label}</p>
+    </div>
+  )
+}
+
+// Thresholds: <=25% red, <=50% orange, <=75% yellow, <100% yellow-green, 100% green.
+function progressColor(pct) {
+  if (pct >= 100) return '#0ca30c'
+  if (pct > 75) return '#a3c93b'
+  if (pct > 50) return '#fab219'
+  if (pct > 25) return '#eb6834'
+  return '#d03b3b'
+}
+
+function CategoryProgressBar({ label, completed, total }) {
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0
+  return (
+    <div>
+      <div className="font-diary-body flex justify-between text-xs text-slate-600">
+        <span>{label}</span>
+        <span>
+          {pct}% ({completed}/{total})
+        </span>
+      </div>
+      <div
+        className="mt-1 h-3 w-full overflow-hidden rounded-full bg-slate-200"
+        role="progressbar"
+        aria-valuenow={pct}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${label} progress`}
+      >
+        <div
+          className="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: progressColor(pct) }}
+        />
+      </div>
+    </div>
+  )
+}
+
+const STATUS_SLICE_COLOURS = {
+  Completed: '#0ca30c',
+  'In progress': '#fab219',
+  Upcoming: '#2a78d6',
+  Overdue: '#d03b3b',
+}
+
+function StatusPieChart({ stats }) {
+  const segments = [
+    { label: 'Completed', value: stats.completed },
+    { label: 'In progress', value: stats.inProgress },
+    { label: 'Upcoming', value: stats.upcoming },
+    { label: 'Overdue', value: stats.overdue },
+  ]
+  const total = segments.reduce((sum, s) => sum + s.value, 0)
+
+  if (total === 0) {
+    return <p className="font-diary-body mt-4 text-sm text-slate-500">No activities yet</p>
+  }
+
+  let cumulative = 0
+  const gradientStops = segments
+    .filter((s) => s.value > 0)
+    .map((s) => {
+      const start = (cumulative / total) * 360
+      cumulative += s.value
+      const end = (cumulative / total) * 360
+      return `${STATUS_SLICE_COLOURS[s.label]} ${start}deg ${end}deg`
+    })
+    .join(', ')
+
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-6">
+      <div
+        className="h-32 w-32 shrink-0 rounded-full"
+        style={{ background: `conic-gradient(${gradientStops})` }}
+        role="img"
+        aria-label={segments.map((s) => `${s.label}: ${s.value}`).join(', ')}
+      />
+      <ul className="font-diary-body space-y-1 text-sm text-slate-600">
+        {segments.map((s) => (
+          <li key={s.label} className="flex items-center gap-2">
+            <span
+              className="inline-block h-3 w-3 shrink-0 rounded-sm"
+              style={{ backgroundColor: STATUS_SLICE_COLOURS[s.label] }}
+            />
+            <span>
+              {s.label}: {s.value} ({Math.round((s.value / total) * 100)}%)
+            </span>
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }
